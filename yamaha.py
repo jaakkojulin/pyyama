@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import requests
 
+
 class YamahaError(Exception):
     """Generic"""
     pass
+
 
 class YamahaConnectionError(YamahaError):
     """Connection related error"""
@@ -15,24 +17,32 @@ class Yamaha:
     _ALLOWED_ZONE_COMMANDS = ('getStatus', 'getSoundProgramList', 'setPower', 'setSleep', 'setVolume', 'setMute',
                               'setInput', 'setSoundProgram', 'prepareInputChange')
     _ALLOWED_OTHERS = ('system', 'netusb', 'tuner', 'cd')
-    _ALLOWED_SYSTEM_COMMANDS = ('getDeviceInfo', 'getFeatures', 'getNetworkStatus', 'getFuncStatus', 'setAutoPowerStandby', 'getLocationInfo', 'sendIrCode')
-    _ALLOWED_TUNER_COMMANDS=('getPresetInfo', 'getPlayInfo', 'setFreq', 'recallPreset', 'switchPreset', 'storePreset','setDabService')
-    _ALLOWED_NETUSB_COMMANDS=('getPresetInfo', 'getPlayInfo', 'setPlayback', 'toggleRepeat', 'toggleShuffle', 'getListInfo', 'setListControl', 'setSearchString', 'recallPreset', 'storePreset', 'getAccountStatus', 'switchAccount', 'getServiceInfo')
+    _ALLOWED_SYSTEM_COMMANDS = (
+    'getDeviceInfo', 'getFeatures', 'getNetworkStatus', 'getFuncStatus', 'setAutoPowerStandby', 'getLocationInfo',
+    'sendIrCode')
+    _ALLOWED_TUNER_COMMANDS = (
+    'getPresetInfo', 'getPlayInfo', 'setFreq', 'recallPreset', 'switchPreset', 'storePreset', 'setDabService')
+    _ALLOWED_NETUSB_COMMANDS = (
+    'getPresetInfo', 'getPlayInfo', 'setPlayback', 'toggleRepeat', 'toggleShuffle', 'getListInfo', 'setListControl',
+    'setSearchString', 'recallPreset', 'storePreset', 'getAccountStatus', 'switchAccount', 'getServiceInfo')
     _ALLOWED_CD_COMMANDS = ('getPlayInfo', 'setPlayback', 'toggleTray', 'toggleRepeat', 'toggleShuffle')
+
     def __init__(self, host):
-        self.host=host
+        assert isinstance(host, str)
+        self.host = host
         self.headers = dict()
-        response=self.make_request('system', 'getDeviceInfo')
+        response = self.make_request('system', 'getDeviceInfo')
         if 'response_code' not in response and 'model_name' not in response:
             raise YamahaConnectionError("Could not get device info.")
-        self.model_name=response['model_name']
-        self.device_id=response['device_id']
+        self.model_name = response['model_name']
+        self.device_id = response['device_id']
 
     def get_model_name(self):
         if self.model_name:
             return self.model_name
         else:
             return ''
+
     def pause(self):
         self.make_request('netusb', 'setPlayback', {'playback': 'pause'})
 
@@ -42,7 +52,9 @@ class Yamaha:
     def unmute(self, zone='main'):
         self.make_request(zone, 'setMute', {'enable': 'false'})
 
-    def make_request(self, zone, command, params={}):
+    def make_request(self, zone, command, params=None):
+        if params is None:
+            params = {}
         if not (zone in self._ALLOWED_ZONES or zone in self._ALLOWED_OTHERS):
             raise ValueError("Wrong zone or API: " + zone)
         if zone in self._ALLOWED_ZONES and command not in self._ALLOWED_ZONE_COMMANDS:
@@ -55,9 +67,9 @@ class Yamaha:
             raise ValueError("Tuner command not allowed")
         if zone == "cd" and command not in self._ALLOWED_CD_COMMANDS:
             raise ValueError("CD command not allowed")
-        url="http://"+self.host+"/YamahaExtendedControl/v1/"+zone+"/"+command
+        url = "http://" + self.host + "/YamahaExtendedControl/v1/" + zone + "/" + command
         try:
-            r = requests.get(url, params=params, timeout=5.0, headers=self.headers)
+            r = requests.get(url, params=params, timeout=3.0, headers=self.headers)
         except ConnectionError as error:
             raise YamahaError("Connection error." + str(error))
         except requests.exceptions.Timeout as error:
@@ -66,14 +78,14 @@ class Yamaha:
             raise YamahaError("Some error in connecting: " + str(error))
         if r.status_code != 200:
             raise YamahaError("HTTP Error")
-        response=r.json()
+        response = r.json()
         if 'response_code' not in response:
             raise YamahaError("Malformed reply from device.")
         else:
             if response['response_code'] != 0:
-                raise YamahaError("Response code was: "+str(response['response_code']))
-        return(response)
+                raise YamahaError("Response code was: " + str(response['response_code']))
+        return (response)
 
-    def set_listener_port(self, listener_port):
-        self.listener_port=listener_port
-        self.headers = {'X-AppName': 'MusicCast/PyYama', 'X-AppPort': listener_port}
+    def set_listener_port(self, listener_port: int):
+        self.listener_port = listener_port
+        self.headers = {'X-AppName': 'MusicCast/1.40(PyYama)', 'X-AppPort': str(listener_port)}

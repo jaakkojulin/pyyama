@@ -20,7 +20,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         host = settings.value('hostname', type=str)
         autoconnect = settings.value('autoconnect', False, type=bool)
         self.listener_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.listener_sock.bind(('',0))
+        self.listener_sock.bind(('', 0))
         self.listener_sock.setblocking(0)
         for attempt in range(10):
             try:
@@ -47,9 +47,11 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.ui.actionExit.triggered.connect(self.exit)
         self.ui.pauseToolButton.clicked.connect(self.pause)
         self.ui.modelNameLabel.setText(self.yamaha.get_model_name())
-        timer = QtCore.QTimer()
-        timer.timeout.connect(self.listen_UDP)
-        timer.start(100)
+        self.udptimer = QTimer()
+        self.udptimer.setSingleShot(False)
+        self.udptimer.setInterval(100)
+        self.udptimer.timeout.connect(self.listen_UDP)
+        self.udptimer.start()
 
     def connect(self):
         self.yamaha = Yamaha(self.host)
@@ -69,9 +71,12 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
     def listen_UDP(self):
         try:
             data, address = self.listener_sock.recvfrom(10000)
-            print(str(data))
         except BlockingIOError:
             pass
+        else:
+            if len(data) > 0:
+                self.ui.plainTextEdit.appendPlainText(str(data))
+                print(str(data))
 
 if __name__ == '__main__':
     QCoreApplication.setOrganizationDomain(ORGANIZATION_DOMAIN)
