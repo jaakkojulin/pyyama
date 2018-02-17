@@ -1,7 +1,8 @@
 #!/usr/bin/python3
 import sys
+import socket
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt, QCoreApplication, QSettings
+from PyQt5.QtCore import Qt, QCoreApplication, QSettings, QTimer
 from PyQt5.QtWidgets import QInputDialog, QLineEdit, QMessageBox
 from pyyamamainwindow import Ui_PyYamaMainWindow
 from yamaha import Yamaha, YamahaError
@@ -18,6 +19,9 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         settings = QSettings()
         host = settings.value('hostname', type=str)
         autoconnect = settings.value('autoconnect', False, type=bool)
+        self.listener_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.listener_sock.bind(('',0))
+        self.listener_sock.setblocking(0)
         for attempt in range(10):
             try:
                 if autoconnect and host != '':
@@ -38,10 +42,14 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         else:
             exit(1)
         settings.setValue('hostname', host)
+        self.yamaha.set_listener_port(self.listener_sock.getsockname()[1])
         self.ui.muteCheckBox.stateChanged.connect(self.muteChange)
         self.ui.actionExit.triggered.connect(self.exit)
         self.ui.pauseToolButton.clicked.connect(self.pause)
         self.ui.modelNameLabel.setText(self.yamaha.get_model_name())
+        timer = QtCore.QTimer()
+        timer.timeout.connect(self.listen_UDP)
+        timer.start(100)
 
     def connect(self):
         self.yamaha = Yamaha(self.host)
@@ -58,6 +66,12 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
     def pause(self):
         self.yamaha.pause()
 
+    def listen_UDP(self):
+        try:
+            data, address = self.listener_sock.recvfrom(10000)
+            print(str(data))
+        except BlockingIOError:
+            pass
 
 if __name__ == '__main__':
     QCoreApplication.setOrganizationDomain(ORGANIZATION_DOMAIN)

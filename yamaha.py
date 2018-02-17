@@ -12,18 +12,21 @@ class YamahaConnectionError(YamahaError):
 
 class Yamaha:
     _ALLOWED_ZONES = ('main', 'zone2', 'zone3', 'zone4')
-    _ALLOWED_ZONE_COMMANDS = ('getStatus', 'getSoundProgramList', 'setPower', 'setSleep', 'setVolume', 'setMute', 'setInput', 'setSoundProgram','prepareInputChange')
+    _ALLOWED_ZONE_COMMANDS = ('getStatus', 'getSoundProgramList', 'setPower', 'setSleep', 'setVolume', 'setMute',
+                              'setInput', 'setSoundProgram', 'prepareInputChange')
     _ALLOWED_OTHERS = ('system', 'netusb', 'tuner', 'cd')
     _ALLOWED_SYSTEM_COMMANDS = ('getDeviceInfo', 'getFeatures', 'getNetworkStatus', 'getFuncStatus', 'setAutoPowerStandby', 'getLocationInfo', 'sendIrCode')
     _ALLOWED_TUNER_COMMANDS=('getPresetInfo', 'getPlayInfo', 'setFreq', 'recallPreset', 'switchPreset', 'storePreset','setDabService')
     _ALLOWED_NETUSB_COMMANDS=('getPresetInfo', 'getPlayInfo', 'setPlayback', 'toggleRepeat', 'toggleShuffle', 'getListInfo', 'setListControl', 'setSearchString', 'recallPreset', 'storePreset', 'getAccountStatus', 'switchAccount', 'getServiceInfo')
-    _ALLOED_CD_COMMANDS = ('getPlayInfo', 'setPlayback', 'toggleTray', 'toggleRepeat', 'toggleShuffle')
+    _ALLOWED_CD_COMMANDS = ('getPlayInfo', 'setPlayback', 'toggleTray', 'toggleRepeat', 'toggleShuffle')
     def __init__(self, host):
         self.host=host
+        self.headers = dict()
         response=self.make_request('system', 'getDeviceInfo')
         if 'response_code' not in response and 'model_name' not in response:
             raise YamahaConnectionError("Could not get device info.")
         self.model_name=response['model_name']
+        self.device_id=response['device_id']
 
     def get_model_name(self):
         if self.model_name:
@@ -52,8 +55,9 @@ class Yamaha:
             raise ValueError("Tuner command not allowed")
         if zone == "cd" and command not in self._ALLOWED_CD_COMMANDS:
             raise ValueError("CD command not allowed")
+        url="http://"+self.host+"/YamahaExtendedControl/v1/"+zone+"/"+command
         try:
-            r = requests.get("http://"+self.host+"/YamahaExtendedControl/v1/"+zone+"/"+command, params=params, timeout=5.0)
+            r = requests.get(url, params=params, timeout=5.0, headers=self.headers)
         except ConnectionError as error:
             raise YamahaError("Connection error." + str(error))
         except requests.exceptions.Timeout as error:
@@ -69,3 +73,7 @@ class Yamaha:
             if response['response_code'] != 0:
                 raise YamahaError("Response code was: "+str(response['response_code']))
         return(response)
+
+    def set_listener_port(self, listener_port):
+        self.listener_port=listener_port
+        self.headers = {'X-AppName': 'MusicCast/PyYama', 'X-AppPort': listener_port}
