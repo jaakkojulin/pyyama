@@ -28,22 +28,54 @@ class Yamaha:
     _ALLOWED_CD_COMMANDS = ('getPlayInfo', 'setPlayback', 'toggleTray', 'toggleRepeat', 'toggleShuffle')
 
     def __init__(self, host):
+        """Connect to and communicate with Yamaha device over HTTP
+
+        :param host: hostname or IP address of device
+        """
         assert isinstance(host, str)
         self.host = host
         self.headers = dict()
         response = self.make_request('system', 'getDeviceInfo')
-        if 'response_code' not in response and 'model_name' not in response:
+        if 'model_name' not in response:
             raise YamahaConnectionError("Could not get device info.")
-        self.model_name = response['model_name']
-        self.device_id = response['device_id']
+        self._model_name = response['model_name']
+        self._device_id = response['device_id']
+        response = self.make_request('system', 'getFeatures')
+        try:
+            input_list = [input['id'] for input in response['system']['input_list']]
+        except KeyError:
+            raise YamahaConnectionError("Response from device doesn't contain the information I need")
+    @property
+    def device_id(self):
+        return self._device_id
+    @device_id.setter
+    def device_id(self, id):
+        assert isinstance(id, str)
+        self._device_id=id
 
-    def get_model_name(self):
-        if self.model_name:
-            return self.model_name
-        else:
-            return ''
+    @property
+    def model_name(self):
+            return self._model_name
+    @model_name.setter
+    def model_name(self, name):
+            assert isinstance(name, str)
+            self._model_name=name
+
+    @property
+    def input_list(self):
+        return self._input_list
+
+    @input_list.setter
+    def input_list(self, list):
+        """
+
+        :type list: list of input names, e.g. ['spotify', 'optical', ...]
+        """
+        assert isinstance(list, list)
+        self.input_list = list
 
     def pause(self):
+        """Pause playback of network/USB sources"""
         self.make_request('netusb', 'setPlayback', {'playback': 'pause'})
 
     def mute(self, zone='main'):
@@ -84,6 +116,7 @@ class Yamaha:
         else:
             if response['response_code'] != 0:
                 raise YamahaError("Response code was: " + str(response['response_code']))
+        print(r.text)
         return (response)
 
     def set_listener_port(self, listener_port: int):

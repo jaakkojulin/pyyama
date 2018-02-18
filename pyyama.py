@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt, QCoreApplication, QSettings, QTimer
 from PyQt5.QtWidgets import QInputDialog, QLineEdit, QMessageBox
 from pyyamamainwindow import Ui_PyYamaMainWindow
 from yamaha import Yamaha, YamahaError
+import json
 
 ORGANIZATION_DOMAIN = 'kuuks.iki.fi'
 APPLICATION_NAME = 'PyYama'
@@ -46,7 +47,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.ui.muteCheckBox.stateChanged.connect(self.muteChange)
         self.ui.actionExit.triggered.connect(self.exit)
         self.ui.pauseToolButton.clicked.connect(self.pause)
-        self.ui.modelNameLabel.setText(self.yamaha.get_model_name())
+        self.ui.modelNameLabel.setText(self.yamaha.model_name)
         self.udptimer = QTimer()
         self.udptimer.setSingleShot(False)
         self.udptimer.setInterval(100)
@@ -75,6 +76,9 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
             pass
         else:
             if len(data) > 0:
+                msg=json.loads(data.decode("utf-8"))
+                if msg['device_id'] == self.yamaha.device_id:
+                    print("This message is for us: ")
                 self.ui.plainTextEdit.appendPlainText(str(data))
                 print(str(data))
 
