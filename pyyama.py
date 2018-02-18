@@ -43,11 +43,16 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         else:
             exit(1)
         settings.setValue('hostname', host)
+        self.make_zone_list()
+        self.zone=self.ui.zoneComboBox.currentText()
         self.yamaha.set_listener_port(self.listener_sock.getsockname()[1])
         self.ui.muteCheckBox.stateChanged.connect(self.muteChange)
         self.ui.actionExit.triggered.connect(self.exit)
         self.ui.pauseToolButton.clicked.connect(self.pause)
         self.ui.modelNameLabel.setText(self.yamaha.model_name)
+        self.ui.zoneComboBox.currentIndexChanged.connect(self.change_zone)
+        self.ui.inputComboBox.currentIndexChanged.connect(self.change_input)
+        self.make_input_list()
         self.udptimer = QTimer()
         self.udptimer.setSingleShot(False)
         self.udptimer.setInterval(100)
@@ -60,14 +65,42 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
     def exit(self):
         QCoreApplication.exit()
 
+    def make_zone_list(self):
+        self.ui.zoneComboBox.blockSignals(True)
+        self.ui.zoneComboBox.clear()
+        for zone in self.yamaha.zones:
+            self.ui.zoneComboBox.addItem(zone)
+        self.ui.inputComboBox.setCurrentIndex(0)
+        self.ui.zoneComboBox.blockSignals(False)
+
+    def change_zone(self):
+        self.zone=self.ui.zoneComboBox.currentText()
+        self.make_input_list()
+
+    def make_input_list(self):
+        self.ui.inputComboBox.blockSignals(True)
+        current_input=self.yamaha.get_current_input(self.zone)
+        index=0
+        current_index=0
+        for input in self.yamaha.get_input_list(self.zone):
+            self.ui.inputComboBox.addItem(input)
+            if input == current_input:
+                current_index=index
+            index += 1
+        self.ui.inputComboBox.setCurrentIndex(current_index)
+        self.ui.inputComboBox.blockSignals(False)
+
+    def change_input(self):
+        self.yamaha.change_input(self.zone, self.ui.inputComboBox.currentText())
+
     def muteChange(self, state):
         if state == Qt.Checked:
-            self.yamaha.mute()
+            self.yamaha.mute(self.zone)
         else:
-            self.yamaha.unmute()
+            self.yamaha.unmute(self.zone)
 
     def pause(self):
-        self.yamaha.pause()
+        self.yamaha.pause(self.zone)
 
     def listen_UDP(self):
         try:

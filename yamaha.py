@@ -41,8 +41,12 @@ class Yamaha:
         self._model_name = response['model_name']
         self._device_id = response['device_id']
         response = self.make_request('system', 'getFeatures')
+        self._input_list={}
         try:
-            input_list = [input['id'] for input in response['system']['input_list']]
+            #self.input_list = [input['id'] for input in response['system']['input_list']]
+            self.zones = response['distribution']['server_zone_list']
+            for zone in response['zone']:
+                self.set_input_list(zone['id'], zone['input_list'])
         except KeyError:
             raise YamahaConnectionError("Response from device doesn't contain the information I need")
     @property
@@ -61,28 +65,38 @@ class Yamaha:
             assert isinstance(name, str)
             self._model_name=name
 
-    @property
-    def input_list(self):
-        return self._input_list
+    def get_current_input(self, zone):
+        response=self.make_request(zone, 'getStatus')
+        try:
+            input=response['input']
+        except KeyError:
+            raise YamahaConnectionError("Response from device doesn't contain the information I need")
+        return input
 
-    @input_list.setter
-    def input_list(self, list):
+    def get_input_list(self, zone):
+        return self._input_list[zone]
+
+    def set_input_list(self, zone, list):
         """
 
         :type list: list of input names, e.g. ['spotify', 'optical', ...]
+        ;
         """
-        assert isinstance(list, list)
-        self.input_list = list
+        self._input_list[zone] = list
 
     def pause(self):
         """Pause playback of network/USB sources"""
         self.make_request('netusb', 'setPlayback', {'playback': 'pause'})
 
-    def mute(self, zone='main'):
+    def mute(self, zone):
         self.make_request(zone, 'setMute', {'enable': 'true'})
 
-    def unmute(self, zone='main'):
+    def unmute(self, zone):
         self.make_request(zone, 'setMute', {'enable': 'false'})
+
+    def change_input(self, zone, input):
+        self.make_request(zone, 'setInput', {'input': input})
+
 
     def make_request(self, zone, command, params=None):
         if params is None:
