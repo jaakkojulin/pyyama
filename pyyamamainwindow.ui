@@ -43,8 +43,8 @@
    <widget class="QToolButton" name="pauseToolButton">
     <property name="geometry">
      <rect>
-      <x>470</x>
-      <y>100</y>
+      <x>370</x>
+      <y>30</y>
       <width>31</width>
       <height>31</height>
      </rect>
@@ -76,7 +76,7 @@
    <widget class="QGroupBox" name="groupBox">
     <property name="geometry">
      <rect>
-      <x>170</x>
+      <x>390</x>
       <y>80</y>
       <width>211</width>
       <height>91</height>
@@ -108,12 +108,12 @@
      </item>
     </layout>
    </widget>
-   <widget class="QGroupBox" name="groupBox_2">
+   <widget class="QGroupBox" name="nowplayingGroupBox">
     <property name="geometry">
      <rect>
       <x>10</x>
       <y>70</y>
-      <width>151</width>
+      <width>371</width>
       <height>101</height>
      </rect>
     </property>

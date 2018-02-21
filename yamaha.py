@@ -97,6 +97,13 @@ class Yamaha:
     def change_input(self, zone, input):
         self.make_request(zone, 'setInput', {'input': input})
 
+    def get_nowplaying(self):
+        input='netusb'
+        if True: #TODO: if current input is something...
+            response=self.make_request(input, 'getPlayInfo')
+            return response
+        else:
+            return {}
 
     def make_request(self, zone, command, params=None):
         if params is None:

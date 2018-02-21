@@ -53,6 +53,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.ui.zoneComboBox.currentIndexChanged.connect(self.change_zone)
         self.ui.inputComboBox.currentIndexChanged.connect(self.change_input)
         self.make_input_list()
+        self.update_nowplaying()
         self.udptimer = QTimer()
         self.udptimer.setSingleShot(False)
         self.udptimer.setInterval(100)
@@ -79,6 +80,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
 
     def make_input_list(self):
         self.ui.inputComboBox.blockSignals(True)
+        self.ui.inputComboBox.clear()
         current_input=self.yamaha.get_current_input(self.zone)
         index=0
         current_index=0
@@ -102,6 +104,20 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
     def pause(self):
         self.yamaha.pause(self.zone)
 
+
+    def update_nowplaying(self):
+        response = self.yamaha.get_nowplaying()
+        try:
+            if response['playback'] == 'pause':
+                self.ui.nowplayingGroupBox.setTitle('Now playing (paused)')
+            else:
+                self.ui.nowplayingGroupBox.setTitle('Now playing')
+            self.ui.artistLabel.setText(response['artist'])
+            self.ui.albumLabel.setText(response['album'])
+            self.ui.trackLabel.setText(response['track'])
+        except KeyError:
+            pass
+
     def listen_UDP(self):
         try:
             data, address = self.listener_sock.recvfrom(10000)
@@ -111,9 +127,16 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
             if len(data) > 0:
                 msg=json.loads(data.decode("utf-8"))
                 if msg['device_id'] == self.yamaha.device_id:
-                    print("This message is for us: ")
-                self.ui.plainTextEdit.appendPlainText(str(data))
-                print(str(data))
+                    self.ui.plainTextEdit.appendPlainText(data.decode("utf-8"))
+                if self.zone in msg:
+                    if 'signal_info_updated' in msg[self.zone] and msg[self.zone]['signal_info_updated']=='true':
+                        #TODO
+                        pass
+                    if 'input' in msg[self.zone] and msg[self.zone]['input'] != self.ui.inputComboBox.currentText():
+                    #TODO: make this NOT depend on the actual text. Maybe store the current (assumed) input source name elsewhere?
+                        self.make_input_list()
+                if 'netusb' in msg and 'play_info_updated' in msg['netusb']: #TODO: only for netusb?
+                    self.update_nowplaying()
 
 if __name__ == '__main__':
     QCoreApplication.setOrganizationDomain(ORGANIZATION_DOMAIN)
