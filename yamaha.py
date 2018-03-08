@@ -42,13 +42,21 @@ class Yamaha:
         self._device_id = response['device_id']
         response = self.make_request('system', 'getFeatures')
         self._input_list={}
+        self._volume_max = {}
+        self._volume_min = {}
+        self._volume_step = {}
         try:
             #self.input_list = [input['id'] for input in response['system']['input_list']]
             self.zones = response['distribution']['server_zone_list']
             for zone in response['zone']:
                 self.set_input_list(zone['id'], zone['input_list'])
-        except KeyError:
-            raise YamahaConnectionError("Response from device doesn't contain the information I need")
+                for rangesettings in zone['range_step']:
+                    if rangesettings['id'] == 'volume':
+                        self._volume_max[zone['id']] = int(rangesettings['max'])
+                        self._volume_min[zone['id']] = int(rangesettings['min'])
+                        self._volume_step[zone['id']] = int(rangesettings['step'])
+        except KeyError as error:
+            raise YamahaConnectionError("Response from device doesn't contain the information I need: " + str(error))
     @property
     def device_id(self):
         return self._device_id
@@ -96,6 +104,39 @@ class Yamaha:
 
     def change_input(self, zone, input):
         self.make_request(zone, 'setInput', {'input': input})
+
+
+    def set_volume_dB(self, zone: str, volumedB):
+        volume=self.get_volume_max(zone)+int(volumedB/0.5)
+        if volume < 0:
+            volume = 0
+        #print("About to set the volume to " + str(volume))
+        self.make_request(zone, 'setVolume', {'volume': str(volume)})
+
+    def get_volume(self, zone: str):
+        response=self.make_request(zone, 'getStatus')
+        volume=int(response['volume'])
+        if volume > self.get_volume_max(zone):
+            raise YamahaError("Volume above known maximum. Impossible.")
+        else:
+            return volume
+
+    def get_volume_dB(self, zone: str):
+        response=self.make_request(zone, 'getStatus')
+        volume=int(response['volume'])
+        maxvolume=self.get_volume_max(zone)
+        print("Volume as reported by device is " + str(volume) + " and in dB this probably is " + str((volume-maxvolume)*0.5))
+        return (volume-maxvolume) * 0.5
+
+    def get_volume_max(self, zone: str) -> int:
+        return self._volume_max[zone]
+
+    def get_volume_min(self, zone):
+        return self._volume_min[zone]
+
+    def get_volume_step(self, zone):
+        return self._volume_step[zone]
+
 
     def get_nowplaying(self):
         input='netusb'

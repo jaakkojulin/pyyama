@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 import sys
 import socket
+import json
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QCoreApplication, QSettings, QTimer
 from PyQt5.QtWidgets import QInputDialog, QLineEdit, QMessageBox
 from pyyamamainwindow import Ui_PyYamaMainWindow
 from yamaha import Yamaha, YamahaError
-import json
 
 ORGANIZATION_DOMAIN = 'kuuks.iki.fi'
 APPLICATION_NAME = 'PyYama'
@@ -52,7 +52,9 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.ui.modelNameLabel.setText(self.yamaha.model_name)
         self.ui.zoneComboBox.currentIndexChanged.connect(self.change_zone)
         self.ui.inputComboBox.currentIndexChanged.connect(self.change_input)
+        self.ui.volumeSpinBox.valueChanged.connect(self.set_volume)
         self.make_input_list()
+        self.update_volume()
         self.update_nowplaying()
         self.udptimer = QTimer()
         self.udptimer.setSingleShot(False)
@@ -65,6 +67,17 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
 
     def exit(self):
         QCoreApplication.exit()
+
+    def update_volume(self, makerequest=True, volume=0):
+        self.ui.volumeSpinBox.blockSignals(True)
+        if makerequest:
+            volume=self.yamaha.get_volume(self.zone)
+        maxvolume=self.yamaha.get_volume_max(self.zone)
+        volume_dB=(volume-maxvolume)*0.5
+        print("Volume as reported by device is " + str(volume) + " and in dB this probably is " + str(volume_dB))
+        if volume_dB != self.ui.volumeSpinBox.value():
+            self.ui.volumeSpinBox.setValue(volume_dB)
+        self.ui.volumeSpinBox.blockSignals(False)
 
     def make_zone_list(self):
         self.ui.zoneComboBox.blockSignals(True)
@@ -104,6 +117,8 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
     def pause(self):
         self.yamaha.pause(self.zone)
 
+    def set_volume(self):
+        self.yamaha.set_volume_dB(self.zone, self.ui.volumeSpinBox.value())
 
     def update_nowplaying(self):
         response = self.yamaha.get_nowplaying()
@@ -132,6 +147,8 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
                     if 'signal_info_updated' in msg[self.zone] and msg[self.zone]['signal_info_updated']=='true':
                         #TODO
                         pass
+                    if 'volume' in msg[self.zone]:
+                        self.update_volume(makerequest=False, volume=int(msg[self.zone]['volume']))
                     if 'input' in msg[self.zone] and msg[self.zone]['input'] != self.ui.inputComboBox.currentText():
                     #TODO: make this NOT depend on the actual text. Maybe store the current (assumed) input source name elsewhere?
                         self.make_input_list()
