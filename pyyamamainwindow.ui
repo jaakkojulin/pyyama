@@ -192,6 +192,12 @@
     <property name="maximum">
      <double>0.000000000000000</double>
     </property>
+    <property name="singleStep">
+     <double>0.500000000000000</double>
+    </property>
+    <property name="value">
+     <double>-80.000000000000000</double>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -200,7 +206,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>17</height>
+     <height>14</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">

@@ -17,6 +17,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         super(PyYamaMainWindow, self).__init__()
         self.ui = Ui_PyYamaMainWindow()
         self.ui.setupUi(self)
+        self.setWindowIcon(QtGui.QIcon('pyyama.png'))
         settings = QSettings()
         if host == '':
             host = settings.value('hostname', type=str)
