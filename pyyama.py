@@ -13,13 +13,16 @@ APPLICATION_NAME = 'PyYama'
 
 
 class PyYamaMainWindow(QtWidgets.QMainWindow):
-    def __init__(self):
+    def __init__(self, host=''):
         super(PyYamaMainWindow, self).__init__()
         self.ui = Ui_PyYamaMainWindow()
         self.ui.setupUi(self)
         settings = QSettings()
-        host = settings.value('hostname', type=str)
-        autoconnect = settings.value('autoconnect', False, type=bool)
+        if host == '':
+            host = settings.value('hostname', type=str)
+            autoconnect = settings.value('autoconnect', False, type=bool)
+        else:
+            autoconnect = True
         self.listener_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.listener_sock.bind(('', 0))
         self.listener_sock.setblocking(0)
@@ -159,6 +162,10 @@ if __name__ == '__main__':
     QCoreApplication.setOrganizationDomain(ORGANIZATION_DOMAIN)
     QCoreApplication.setApplicationName(APPLICATION_NAME)
     app = QtWidgets.QApplication(sys.argv)
-    w = PyYamaMainWindow()
+    if len(sys.argv) > 1:
+        host=sys.argv[1]
+    else:
+        host=''
+    w = PyYamaMainWindow(host)
     w.show()
     sys.exit(app.exec_())
