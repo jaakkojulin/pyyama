@@ -68,8 +68,9 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.make_input_list()
         self.update_nowplaying()
         self.udptimer = QTimer()
-        self.udptimer.setSingleShot(False)
-        self.udptimer.setInterval(100)
+        self.udptimer.setSingleShot(True)
+        self.udpinterval=100
+        self.udptimer.setInterval(self.udpinterval)
         self.udptimer.timeout.connect(self.listen_UDP)
         self.udptimer.start()
 
@@ -184,6 +185,10 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         try:
             data, address = self.listener_sock.recvfrom(10000)
         except BlockingIOError:
+            self.udpinterval *= 2
+            if(self.udpinterval > 100):
+                self.udpinterval=100
+            self.udptimer.start(self.udpinterval)
             pass
         else:
             if len(data) > 0:
@@ -204,6 +209,8 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
                         self.refresh()
                 if 'netusb' in msg and 'play_info_updated' in msg['netusb']: #TODO: only for netusb?
                     self.update_nowplaying()
+            self.udpinterval=1
+            self.udptimer.start(0)
 
 if __name__ == '__main__':
     QCoreApplication.setOrganizationDomain(ORGANIZATION_DOMAIN)
