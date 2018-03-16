@@ -2,17 +2,17 @@
 import requests
 
 
-class YamahaError(Exception):
+class YamaError(Exception):
     """Generic"""
     pass
 
 
-class YamahaConnectionError(YamahaError):
+class YamaConnectionError(YamaError):
     """Connection related error"""
     pass
 
 
-class Yamaha:
+class Yama:
     _ALLOWED_ZONES = ('main', 'zone2', 'zone3', 'zone4')
     _ALLOWED_ZONE_COMMANDS = ('getStatus', 'getSoundProgramList', 'setPower', 'setSleep', 'setVolume', 'setMute',
                               'setInput', 'setSoundProgram', 'prepareInputChange')
@@ -28,7 +28,7 @@ class Yamaha:
     _ALLOWED_CD_COMMANDS = ('getPlayInfo', 'setPlayback', 'toggleTray', 'toggleRepeat', 'toggleShuffle')
 
     def __init__(self, host):
-        """Connect to and communicate with Yamaha device over HTTP
+        """Connect to and communicate with a device over HTTP
 
         :param host: hostname or IP address of device
         """
@@ -37,7 +37,7 @@ class Yamaha:
         self.headers = dict()
         response = self.make_request('system', 'getDeviceInfo')
         if 'model_name' not in response:
-            raise YamahaConnectionError("Could not get device info.")
+            raise YamaConnectionError("Could not get device info.")
         self._model_name = response['model_name']
         self._device_id = response['device_id']
         response = self.make_request('system', 'getFeatures')
@@ -56,7 +56,7 @@ class Yamaha:
                         self._volume_min[zone['id']] = int(rangesettings['min'])
                         self._volume_step[zone['id']] = int(rangesettings['step'])
         except KeyError as error:
-            raise YamahaConnectionError("Response from device doesn't contain the information I need: " + str(error))
+            raise YamaConnectionError("Response from device doesn't contain the information I need: " + str(error))
     @property
     def device_id(self):
         return self._device_id
@@ -78,7 +78,7 @@ class Yamaha:
         try:
             input=response['input']
         except KeyError:
-            raise YamahaConnectionError("Response from device doesn't contain the information I need")
+            raise YamaConnectionError("Response from device doesn't contain the information I need")
         return input
 
     def get_input_list(self, zone):
@@ -123,7 +123,7 @@ class Yamaha:
         response=self.make_request(zone, 'getStatus')
         volume=int(response['volume'])
         if volume > self.get_volume_max(zone):
-            raise YamahaError("Volume above known maximum. Impossible.")
+            raise YamaError("Volume above known maximum. Impossible.")
         else:
             return volume
 
@@ -175,19 +175,19 @@ class Yamaha:
         try:
             r = requests.get(url, params=params, timeout=3.0, headers=self.headers)
         except ConnectionError as error:
-            raise YamahaError("Connection error." + str(error))
+            raise YamaError("Connection error." + str(error))
         except requests.exceptions.Timeout as error:
-            raise YamahaError("Connection timeout.")
+            raise YamaError("Connection timeout.")
         except Exception as error:
-            raise YamahaError("Some error in connecting: " + str(error))
+            raise YamaError("Some error in connecting: " + str(error))
         if r.status_code != 200:
-            raise YamahaError("HTTP Error")
+            raise YamaError("HTTP Error")
         response = r.json()
         if 'response_code' not in response:
-            raise YamahaError("Malformed reply from device.")
+            raise YamaError("Malformed reply from device.")
         else:
             if response['response_code'] != 0:
-                raise YamahaError("Response code was: " + str(response['response_code']))
+                raise YamaError("Response code was: " + str(response['response_code']))
         #print(r.text)
         return (response)
 

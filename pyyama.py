@@ -6,11 +6,12 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QCoreApplication, QSettings, QTimer
 from PyQt5.QtWidgets import QInputDialog, QLineEdit, QMessageBox
 from pyyamamainwindow import Ui_PyYamaMainWindow
-from yamaha import Yamaha, YamahaError
+from yama import Yama, YamaError
 
 ORGANIZATION_DOMAIN = 'kuuks.iki.fi'
 APPLICATION_NAME = 'PyYama'
 
+VERSION = "0.1.0"
 
 class PyYamaMainWindow(QtWidgets.QMainWindow):
     def __init__(self, host=''):
@@ -30,16 +31,16 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         for attempt in range(10):
             try:
                 if autoconnect and host != '':
-                    self.yamaha = Yamaha(host)
+                    self.yama = Yama(host)
                 else:
-                    text, ok_pressed = QInputDialog.getText(self, "PyYama Connect", "Hostname of Yamaha device:",
+                    text, ok_pressed = QInputDialog.getText(self, "PyYama Connect", "Hostname of device:",
                                                             QLineEdit.Normal, host)
                     if ok_pressed:
                         host = text
                     else:
                         exit(1)
-                self.yamaha = Yamaha(host)
-            except YamahaError as error:
+                self.yama = Yama(host)
+            except YamaError as error:
                 QMessageBox.critical(self, "PyYama error", str(error))
                 autoconnect = False
             else:
@@ -49,16 +50,17 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         settings.setValue('hostname', host)
         self.make_zone_list()
         self.zone=self.ui.zoneComboBox.currentText()
-        self.yamaha.set_listener_port(self.listener_sock.getsockname()[1])
+        self.yama.set_listener_port(self.listener_sock.getsockname()[1])
         self.ui.actionExit.triggered.connect(self.exit)
         self.ui.pauseToolButton.clicked.connect(self.pause)
         self.ui.nextToolButton.clicked.connect(self.next)
         self.ui.previousToolButton.clicked.connect(self.previous)
         self.ui.muteToolButton.clicked.connect(self.muteToggle)
-        self.ui.modelNameLabel.setText(self.yamaha.model_name)
+        self.ui.modelNameLabel.setText(self.yama.model_name)
         self.ui.zoneComboBox.currentIndexChanged.connect(self.change_zone)
         self.ui.inputComboBox.currentIndexChanged.connect(self.change_input)
         self.ui.volumeSpinBox.valueChanged.connect(self.set_volume)
+        self.ui.actionAbout_PyYama.triggered.connect(self.about)
 
         self.status={}
         self.refresh()
@@ -74,10 +76,14 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
 
 
     def connect(self):
-        self.yamaha = Yamaha(self.host)
+        self.yama = Yama(self.host)
 
     def exit(self):
         QCoreApplication.exit()
+
+    def about(self):
+        QMessageBox.about(self, "PyYama", "PyYama " + VERSION + "\n\nby Jaakko Julin\n\nPyYama is a Python and PyQt5 based software that can control some devices manufactured by a certain Japanese corporation. This program is not supported, endorsed or authorized by that or any other corporation. No warranty.")
+        
 
     def refresh(self):
         self.update_status()
@@ -85,7 +91,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.update_mute(provide=False)
 
     def update_status(self):
-        self.status=self.yamaha.get_status(self.zone)
+        self.status=self.yama.get_status(self.zone)
 
     def update_volume(self, provide=False, volume=0): # If you provide a volume, set provide to True.
         # Else make sure internal state is ok or update_status() is called before us.
@@ -94,7 +100,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
             self.status['volume']=volume
         else:
             volume=self.status['volume']
-        maxvolume=self.yamaha.get_volume_max(self.zone)
+        maxvolume=self.yama.get_volume_max(self.zone)
         volume_dB=(volume-maxvolume)*0.5
         # print("Volume as reported by device is " + str(volume) + " and in dB this probably is " + str(volume_dB))
         if volume_dB != self.ui.volumeSpinBox.value():
@@ -115,7 +121,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
     def make_zone_list(self):
         self.ui.zoneComboBox.blockSignals(True)
         self.ui.zoneComboBox.clear()
-        for zone in self.yamaha.zones:
+        for zone in self.yama.zones:
             self.ui.zoneComboBox.addItem(zone)
         self.ui.inputComboBox.setCurrentIndex(0)
         self.ui.zoneComboBox.blockSignals(False)
@@ -127,10 +133,10 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
     def make_input_list(self):
         self.ui.inputComboBox.blockSignals(True)
         self.ui.inputComboBox.clear()
-        current_input=self.yamaha.get_current_input(self.zone)
+        current_input=self.yama.get_current_input(self.zone)
         index=0
         current_index=0
-        for input in self.yamaha.get_input_list(self.zone):
+        for input in self.yama.get_input_list(self.zone):
             self.ui.inputComboBox.addItem(input)
             if input == current_input:
                 current_index=index
@@ -139,28 +145,28 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.ui.inputComboBox.blockSignals(False)
 
     def change_input(self):
-        self.yamaha.change_input(self.zone, self.ui.inputComboBox.currentText())
+        self.yama.change_input(self.zone, self.ui.inputComboBox.currentText())
 
     def muteToggle(self):
         if self.status['mute'] == False:
-            self.yamaha.mute(self.zone)
+            self.yama.mute(self.zone)
         else:
-            self.yamaha.unmute(self.zone)
+            self.yama.unmute(self.zone)
 
     def pause(self):
-        self.yamaha.pause()
+        self.yama.pause()
 
     def previous(self):
-        self.yamaha.previous()
+        self.yama.previous()
 
     def next(self):
-        self.yamaha.next()
+        self.yama.next()
 
     def set_volume(self):
-        self.yamaha.set_volume_dB(self.zone, self.ui.volumeSpinBox.value())
+        self.yama.set_volume_dB(self.zone, self.ui.volumeSpinBox.value())
 
     def update_nowplaying(self):
-        response = self.yamaha.get_nowplaying()
+        response = self.yama.get_nowplaying()
         try:
             if response['playback'] == 'pause':
                 self.ui.nowplayingGroupBox.setTitle('Now playing (paused)')
@@ -182,7 +188,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         else:
             if len(data) > 0:
                 msg=json.loads(data.decode("utf-8"))
-                if msg['device_id'] == self.yamaha.device_id:
+                if msg['device_id'] == self.yama.device_id:
                     self.ui.plainTextEdit.appendPlainText(data.decode("utf-8"))
                 if self.zone in msg:
                     if 'signal_info_updated' in msg[self.zone] and msg[self.zone]['signal_info_updated']=='true':
