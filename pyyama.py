@@ -74,7 +74,11 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.udptimer.timeout.connect(self.listen_UDP)
         self.udptimer.start()
 
-
+        self.refreshtimer = QTimer()
+        self.refreshtimer.setSingleShot(False)
+        self.refreshtimer.setInterval(60000)
+        self.refreshtimer.timeout.connect(self.refresh)
+        self.refreshtimer.start()
 
     def connect(self):
         self.yama = Yama(self.host)

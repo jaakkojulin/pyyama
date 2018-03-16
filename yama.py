@@ -27,7 +27,7 @@ class Yama:
     'setSearchString', 'recallPreset', 'storePreset', 'getAccountStatus', 'switchAccount', 'getServiceInfo')
     _ALLOWED_CD_COMMANDS = ('getPlayInfo', 'setPlayback', 'toggleTray', 'toggleRepeat', 'toggleShuffle')
 
-    def __init__(self, host):
+    def __init__(self, host: str):
         """Connect to and communicate with a device over HTTP
 
         :param host: hostname or IP address of device
