@@ -96,6 +96,12 @@ class Yamaha:
         """Pause playback of network/USB sources"""
         self.make_request('netusb', 'setPlayback', {'playback': 'pause'})
 
+    def previous(self):
+        self.make_request('netusb', 'setPlayback', {'playback': 'previous'})
+
+    def next(self):
+        self.make_request('netusb', 'setPlayback', {'playback': 'next'})
+
     def mute(self, zone):
         self.make_request(zone, 'setMute', {'enable': 'true'})
 
@@ -137,6 +143,10 @@ class Yamaha:
     def get_volume_step(self, zone):
         return self._volume_step[zone]
 
+    def get_status(self, zone):
+        response=self.make_request(zone, 'getStatus')
+        out = {'mute': bool(response['mute']), 'volume': int(response['volume'])}
+        return out
 
     def get_nowplaying(self):
         input='netusb'
@@ -178,7 +188,7 @@ class Yamaha:
         else:
             if response['response_code'] != 0:
                 raise YamahaError("Response code was: " + str(response['response_code']))
-        print(r.text)
+        #print(r.text)
         return (response)
 
     def set_listener_port(self, listener_port: int):
