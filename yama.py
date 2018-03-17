@@ -109,9 +109,17 @@ class Yama:
         """
         self._input_list[zone] = list
 
+    def play(self):
+        """ Start playback of network/USB sources"""
+        self.make_request('netusb', 'setPlayback', {'playback': 'play'})
+
     def pause(self):
         """Pause playback of network/USB sources"""
         self.make_request('netusb', 'setPlayback', {'playback': 'pause'})
+
+    def stop(self):
+        """Stop playback of network/USB sources"""
+        self.make_request('netusb', 'setPlayback', {'playback': 'stop'})
 
     def previous(self):
         """Previous track (only on netusb source)"""
@@ -170,7 +178,8 @@ class Yama:
         response=self.make_request(zone, 'getStatus')
         out = {'mute': bool(response['mute']),
                'volume': int(response['volume']),
-               'power': (response['power'] == 'on')
+               'power': (response['power'] == 'on'),
+               'input': response['input']
         }
         return out
 

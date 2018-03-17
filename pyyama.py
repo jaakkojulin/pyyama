@@ -69,7 +69,8 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.yama.set_listener_port(self.listener_sock.getsockname()[1])
 
         self.ui.actionExit.triggered.connect(self.exit)
-        self.ui.pauseToolButton.clicked.connect(self.pause)
+        self.ui.playPauseToolButton.clicked.connect(self.pause)
+        self.ui.stopToolButton.clicked.connect(self.stop)
         self.ui.nextToolButton.clicked.connect(self.next)
         self.ui.previousToolButton.clicked.connect(self.previous)
         self.ui.muteToolButton.clicked.connect(self.muteToggle)
@@ -119,6 +120,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
 
     def refresh(self):
         self.update_status()
+        self.update_input(provide=False)
         self.update_volume(provide=False)
         self.update_mute(provide=False)
         self.update_power(provide=False)
@@ -138,6 +140,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
             self.ui.volumeSpinBox.blockSignals(True)
             self.ui.volumeSpinBox.setValue(volume_dB)
             self.ui.volumeSpinBox.blockSignals(False)
+        self.ui.volumeSpinBox.setEnabled(True)
 
     def update_mute(self, provide=False, muted=False):
         self.ui.muteToolButton.blockSignals(True)
@@ -160,7 +163,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
             self.ui.powerToolButton.setStyleSheet("background-color: rgb(255, 127, 127)")
             self.ui.previousToolButton.setEnabled(True)
             self.ui.nextToolButton.setEnabled(True)
-            self.ui.pauseToolButton.setEnabled(True)
+            self.ui.playPauseToolButton.setEnabled(True)
             self.ui.muteToolButton.setEnabled(True)
             self.ui.zoneComboBox.setEnabled(True)
             self.ui.inputComboBox.setEnabled(True)
@@ -169,11 +172,19 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
             self.ui.powerToolButton.setStyleSheet("background-color: rgb(127, 255, 127)")
             self.ui.previousToolButton.setEnabled(False)
             self.ui.nextToolButton.setEnabled(False)
-            self.ui.pauseToolButton.setEnabled(False)
+            self.ui.playPauseToolButton.setEnabled(False)
             self.ui.muteToolButton.setEnabled(False)
             self.ui.zoneComboBox.setEnabled(False)
             self.ui.inputComboBox.setEnabled(False)
             self.ui.volumeSpinBox.setEnabled(False)
+
+    def update_input(self, provide=False, input_source=''):
+        if provide:
+            self.status['input'] = input_source
+        else:
+            input_source = self.status['input']
+        if input_source != self.ui.inputComboBox.currentText():
+            self.make_input_list()
 
     def make_zone_list(self):
         self.ui.zoneComboBox.blockSignals(True)
@@ -186,6 +197,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
     def change_zone(self):
         self.zone = self.ui.zoneComboBox.currentText()
         self.make_input_list()
+        self.refresh()
 
     def make_input_list(self):
         self.ui.inputComboBox.blockSignals(True)
@@ -212,6 +224,11 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
 
     def pause(self):
         self.yama.pause()
+    def play(self):
+        self.yama.play()
+
+    def stop(self):
+        self.yama.stop()
 
     def previous(self):
         self.yama.previous()
@@ -221,6 +238,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
 
     def set_volume(self):
         self.yama.set_volume_dB(self.zone, self.ui.volumeSpinBox.value())
+        self.ui.volumeSpinBox.setEnabled(False)
 
     def power(self):
         if self.status['power'] == True:
@@ -233,10 +251,25 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         try:
             if response['playback'] == 'pause':
                 self.ui.nowplayingGroupBox.setTitle('Now playing (paused)')
-                self.ui.pauseToolButton.setIcon(QtGui.QIcon(":/icons/icons32/media-play-4x.png"))
+                self.ui.playPauseToolButton.setIcon(QtGui.QIcon(":/icons/icons32/media-play-4x.png"))
+                self.ui.playPauseToolButton.disconnect()
+                self.ui.playPauseToolButton.clicked.connect(self.play)
+                self.ui.playPauseToolButton.setEnabled(True)
+                self.ui.stopToolButton.setEnabled(True)
+            elif response['playback'] == 'stop':
+                self.ui.nowplayingGroupBox.setTitle('Now playing (stopped)')
+                self.ui.playPauseToolButton.setIcon(QtGui.QIcon(":/icons/icons32/media-play-4x.png"))
+                self.ui.playPauseToolButton.disconnect()
+                self.ui.playPauseToolButton.clicked.connect(self.play)
+                self.ui.playPauseToolButton.setEnabled(True)
+                self.ui.stopToolButton.setEnabled(False)
             else:
                 self.ui.nowplayingGroupBox.setTitle('Now playing')
-                self.ui.pauseToolButton.setIcon(QtGui.QIcon(":/icons/icons32/media-pause-4x.png"))
+                self.ui.playPauseToolButton.setIcon(QtGui.QIcon(":/icons/icons32/media-pause-4x.png"))
+                self.ui.playPauseToolButton.disconnect()
+                self.ui.playPauseToolButton.clicked.connect(self.pause)
+                self.ui.playPauseToolButton.setEnabled(True)
+                self.ui.stopToolButton.setEnabled(True)
             self.ui.artistLabel.setText(response['artist'])
             self.ui.albumLabel.setText(response['album'])
             self.ui.trackLabel.setText(response['track'])
@@ -268,10 +301,8 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
                         self.update_volume(provide=True, volume=int(msg[self.zone]['volume']))
                     if 'mute' in msg[self.zone]:
                         self.update_mute(provide=True, muted=bool(msg[self.zone]['mute']))
-                    if 'input' in msg[self.zone] and msg[self.zone]['input'] != self.ui.inputComboBox.currentText():
-                        # TODO: make this NOT depend on the actual text. Store input source name elsewhere.
-                        self.make_input_list()
-                        self.refresh()
+                    if 'input' in msg[self.zone]:
+                        self.update_input(provide=True, input_source=msg[self.zone]['input'])
                 if 'netusb' in msg and 'play_info_updated' in msg['netusb']:  # TODO: only for netusb?
                     self.update_nowplaying()
             self.udpinterval = 1
