@@ -6,12 +6,16 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>323</width>
+    <width>330</width>
     <height>522</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>PyYama</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="icons.qrc">
+    <normaloff>:/icons/icons128/pyyama.png</normaloff>:/icons/icons128/pyyama.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_2">
@@ -82,8 +86,11 @@
            <string>Control</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_3">
-           <item row="1" column="1">
+           <item row="0" column="1">
             <widget class="QDoubleSpinBox" name="volumeSpinBox">
+             <property name="styleSheet">
+              <string notr="true"/>
+             </property>
              <property name="buttonSymbols">
               <enum>QAbstractSpinBox::PlusMinus</enum>
              </property>
@@ -110,7 +117,7 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="0">
+           <item row="0" column="0">
             <widget class="QLabel" name="label_6">
              <property name="text">
               <string>Volume</string>
@@ -127,12 +134,33 @@
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout">
            <item>
+            <widget class="QToolButton" name="powerToolButton">
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(127,255,127)</string>
+             </property>
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset resource="icons.qrc">
+               <normaloff>:/icons/icons32/power-standby-4x.png</normaloff>:/icons/icons32/power-standby-4x.png</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QToolButton" name="previousToolButton">
              <property name="text">
               <string>...</string>
              </property>
              <property name="icon">
-              <iconset theme="media-skip-backward"/>
+              <iconset resource="icons.qrc">
+               <normaloff>:/icons/icons32/media-skip-backward-4x.png</normaloff>:/icons/icons32/media-skip-backward-4x.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -148,7 +176,8 @@
               <string>...</string>
              </property>
              <property name="icon">
-              <iconset theme="media-playback-pause"/>
+              <iconset resource="icons.qrc">
+               <normaloff>:/icons/icons32/media-pause-4x.png</normaloff>:/icons/icons32/media-pause-4x.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -164,7 +193,8 @@
               <string>...</string>
              </property>
              <property name="icon">
-              <iconset theme="media-skip-forward"/>
+              <iconset resource="icons.qrc">
+               <normaloff>:/icons/icons32/media-skip-forward-4x.png</normaloff>:/icons/icons32/media-skip-forward-4x.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -180,7 +210,8 @@
               <string>...</string>
              </property>
              <property name="icon">
-              <iconset theme="audio-volume-muted"/>
+              <iconset resource="icons.qrc">
+               <normaloff>:/icons/icons32/volume-off-4x.png</normaloff>:/icons/icons32/volume-off-4x.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -276,7 +307,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>323</width>
+     <width>330</width>
      <height>26</height>
     </rect>
    </property>
@@ -307,6 +338,8 @@
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="icons.qrc"/>
+ </resources>
  <connections/>
 </ui>

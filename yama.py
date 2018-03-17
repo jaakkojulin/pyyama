@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
-import requests
+"""Yama control module
 
+"""
+
+__version__ = '0.1.0'
+__author__ = 'Jaakko Julin'
+
+import requests
 
 class YamaError(Exception):
     """Generic"""
@@ -30,7 +36,8 @@ class Yama:
     def __init__(self, host: str):
         """Connect to and communicate with a device over HTTP
 
-        :param host: hostname or IP address of device
+        Args:
+            host: Hostname of the device (or IP address)
         """
         assert isinstance(host, str)
         self.host = host
@@ -73,7 +80,17 @@ class Yama:
             assert isinstance(name, str)
             self._model_name=name
 
-    def get_current_input(self, zone):
+    def get_current_input(self, zone: str) -> str:
+        """Get the name of the current input
+
+        Args:
+            zone: name of the zone
+
+        Returns:
+            str: name of the current input of zone
+
+        """
+        input=""
         response=self.make_request(zone, 'getStatus')
         try:
             input=response['input']
@@ -97,6 +114,7 @@ class Yama:
         self.make_request('netusb', 'setPlayback', {'playback': 'pause'})
 
     def previous(self):
+        """Previous track (only on netusb source)"""
         self.make_request('netusb', 'setPlayback', {'playback': 'previous'})
 
     def next(self):
@@ -111,6 +129,11 @@ class Yama:
     def change_input(self, zone, input):
         self.make_request(zone, 'setInput', {'input': input})
 
+    def power_on(self, zone):
+        self.make_request(zone, 'setPower', {'power': 'on'})
+
+    def standby(self, zone):
+        self.make_request(zone, 'setPower', {'power': 'standby'})
 
     def set_volume_dB(self, zone: str, volumedB):
         volume=self.get_volume_max(zone)+int(volumedB/0.5)
@@ -145,7 +168,10 @@ class Yama:
 
     def get_status(self, zone):
         response=self.make_request(zone, 'getStatus')
-        out = {'mute': bool(response['mute']), 'volume': int(response['volume'])}
+        out = {'mute': bool(response['mute']),
+               'volume': int(response['volume']),
+               'power': (response['power'] == 'on')
+        }
         return out
 
     def get_nowplaying(self):
@@ -188,7 +214,7 @@ class Yama:
         else:
             if response['response_code'] != 0:
                 raise YamaError("Response code was: " + str(response['response_code']))
-        #print(r.text)
+        print("REQUEST: " + url + "\nPARAMS: " + str(params) + "\nHEADERS: " + str(self.headers) + "\nRESPONSE: " + r.text + "\n")
         return (response)
 
     def set_listener_port(self, listener_port: int):

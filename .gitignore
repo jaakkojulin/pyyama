@@ -1,3 +1,6 @@
 .idea/
 venv/
 __pycache__
+*window.py
+*_rc.py
+*.qrc
