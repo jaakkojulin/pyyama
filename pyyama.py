@@ -30,6 +30,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         super(PyYamaMainWindow, self).__init__()
         self.ui = Ui_PyYamaMainWindow()
         self.ui.setupUi(self)
+        #self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         settings = QSettings()
         if host == '':
             host = settings.value('hostname', type=str)

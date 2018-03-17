@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>330</width>
-    <height>522</height>
+    <width>384</width>
+    <height>534</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,10 +17,29 @@
    <iconset resource="icons.qrc">
     <normaloff>:/icons/icons128/pyyama.png</normaloff>:/icons/icons128/pyyama.png</iconset>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QWidget {
+background-color: rgb(63, 63, 63);
+color: white;
+border-color: rgb(127, 127, 127);
+}</string>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_2">
     <item row="0" column="0">
      <widget class="QTabWidget" name="tabWidget">
+      <property name="styleSheet">
+       <string notr="true">QToolButton {
+background-color: rgb(127,159,255);
+}
+QGroupBox {
+border-color: white;
+background-color: rgb(71, 71, 71);
+}
+QLabel {
+background: transparent;
+}</string>
+      </property>
       <property name="currentIndex">
        <number>0</number>
       </property>
@@ -37,27 +56,25 @@
           <layout class="QFormLayout" name="formLayout_2">
            <item row="0" column="0">
             <widget class="QLabel" name="label_2">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>40</height>
+              </size>
+             </property>
              <property name="text">
               <string>Artist</string>
              </property>
             </widget>
            </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_3">
-             <property name="text">
-              <string>Track</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_4">
-             <property name="text">
-              <string>Album</string>
-             </property>
-            </widget>
-           </item>
            <item row="0" column="1">
             <widget class="QLabel" name="artistLabel">
+             <property name="minimumSize">
+              <size>
+               <width>220</width>
+               <height>40</height>
+              </size>
+             </property>
              <property name="text">
               <string>TextLabel</string>
              </property>
@@ -66,17 +83,58 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="1">
-            <widget class="QLabel" name="trackLabel">
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_3">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>40</height>
+              </size>
+             </property>
              <property name="text">
-              <string>TextLabel</string>
+              <string>Track</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_4">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>40</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Album</string>
              </property>
             </widget>
            </item>
            <item row="2" column="1">
             <widget class="QLabel" name="albumLabel">
+             <property name="minimumSize">
+              <size>
+               <width>220</width>
+               <height>40</height>
+              </size>
+             </property>
              <property name="text">
               <string>TextLabel</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLabel" name="trackLabel">
+             <property name="minimumSize">
+              <size>
+               <width>220</width>
+               <height>40</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>TextLabel</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -86,7 +144,7 @@
         <item>
          <widget class="QGroupBox" name="groupBox_2">
           <property name="title">
-           <string>Control</string>
+           <string/>
           </property>
           <layout class="QGridLayout" name="gridLayout_3">
            <item row="0" column="1">
@@ -263,16 +321,6 @@
            <string>Input</string>
           </property>
           <layout class="QFormLayout" name="formLayout">
-           <item row="1" column="0">
-            <widget class="QLabel" name="label">
-             <property name="text">
-              <string>Source</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QComboBox" name="inputComboBox"/>
-           </item>
            <item row="0" column="0">
             <widget class="QLabel" name="label_5">
              <property name="text">
@@ -282,6 +330,16 @@
            </item>
            <item row="0" column="1">
             <widget class="QComboBox" name="zoneComboBox"/>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>Source</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="inputComboBox"/>
            </item>
            <item row="2" column="1">
             <spacer name="verticalSpacer">
@@ -327,7 +385,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>330</width>
+     <width>384</width>
      <height>26</height>
     </rect>
    </property>
