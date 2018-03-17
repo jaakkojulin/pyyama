@@ -49,7 +49,8 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
             self.listener_sock.bind(('', udp_port))
             self.listener_sock.setblocking(0)
         except OSError as error:
-            QMessageBox.critical(self, "PyYama error", "Error in setting up UDP listener: " + str(error))
+            QMessageBox.critical(self, "PyYama error",
+                                 "Error in setting up UDP listener: " + str(error))
             exit(1)
         for attempt in range(10):
             try:
@@ -80,14 +81,14 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.ui.stopToolButton.clicked.connect(self.stop)
         self.ui.nextToolButton.clicked.connect(self.next)
         self.ui.previousToolButton.clicked.connect(self.previous)
-        self.ui.muteToolButton.clicked.connect(self.muteToggle)
+        self.ui.muteToolButton.clicked.connect(self.mute_toggle)
         self.ui.modelNameLabel.setText(self.yama.model_name)
         self.ui.zoneComboBox.currentIndexChanged.connect(self.change_zone)
         self.ui.inputComboBox.currentIndexChanged.connect(self.change_input)
         self.ui.volumeSpinBox.valueChanged.connect(self.set_volume)
         self.ui.actionAbout_PyYama.triggered.connect(self.about)
         self.ui.powerToolButton.clicked.connect(self.power)
-        self.greetingstage=0
+        self.greetingstage = 0
         self.greetingtimer = QTimer()
         self.greetingtimer.setSingleShot(True)
         self.greetingtimer.timeout.connect(self.greeting)
@@ -119,7 +120,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         QCoreApplication.exit()
 
     def greeting(self):
-        msg=('PyYama ' + __version__, 'Copyright (C) 2018 Jaakko Julin', 'This is free software.', 'See Help|About for details.', 'ABSOLUTELY NO WARRANTY')
+        msg = ('PyYama ' + __version__, 'Copyright (C) 2018 Jaakko Julin', 'This is free software.', 'See Help|About for details.', 'ABSOLUTELY NO WARRANTY')
         self.ui.statusbar.showMessage(msg[self.greetingstage], 2500)
         self.greetingstage += 1
         if self.greetingstage < len(msg):
@@ -138,7 +139,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
                           "\n\n"
                           "This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.\n\n"
 
-"You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.\n\n"
+                          "You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.\n\n"
                           "This program is not supported, endorsed or authorized by any manufacturers of said audio equipment.\n\n"
                           "Some icons are from the Open Iconic collection of icons. Copyright (C) 2014 Waybury, licensed under The MIT License. See file LICENSE in icon directories.\n"
                           )
@@ -241,7 +242,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
     def change_input(self):
         self.yama.change_input(self.zone, self.ui.inputComboBox.currentText())
 
-    def muteToggle(self):
+    def mute_toggle(self):
         if self.status['mute'] == False:
             self.yama.mute(self.zone)
         else:
@@ -266,7 +267,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.ui.volumeSpinBox.setEnabled(False)
 
     def power(self):
-        if self.status['power'] == True:
+        if self.status['power']:
             self.yama.standby(self.zone)
         else:
             self.yama.power_on(self.zone)
@@ -306,15 +307,15 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
             data, address = self.listener_sock.recvfrom(10000)
         except BlockingIOError:
             self.udpinterval *= 2
-            if (self.udpinterval > 100):
+            if self.udpinterval > 100:
                 self.udpinterval = 100
             self.udptimer.start(self.udpinterval)
             pass
         else:
-            if len(data) > 0:
+            if data:
                 msg = json.loads(data.decode("utf-8"))
                 if msg['device_id'] == self.yama.device_id:
-                    self.ui.plainTextEdit.appendPlainText(data.decode("utf-8"))
+                    self.ui.plainTextEdit.appendPlainText(str(address[0]) + ':' + str(address[1])  + "  " + data.decode("utf-8") + '\n')
                 if self.zone in msg:
 
                     if 'signal_info_updated' in msg[self.zone] and msg[self.zone]['signal_info_updated'] == 'true':
@@ -338,10 +339,9 @@ if __name__ == '__main__':
     QCoreApplication.setOrganizationDomain(ORGANIZATION_DOMAIN)
     QCoreApplication.setApplicationName(APPLICATION_NAME)
     app = QtWidgets.QApplication(sys.argv)
+    host = ''
     if len(sys.argv) > 1:
         host = sys.argv[1]
-    else:
-        host = ''
-    w = PyYamaMainWindow(host)
+    w = PyYamaMainWindow(HOST)
     w.show()
     sys.exit(app.exec_())
