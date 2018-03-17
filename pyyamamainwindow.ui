@@ -32,18 +32,28 @@ border-color: rgb(127, 127, 127);
        <string notr="true">QToolButton {
 background-color: rgb(127,159,255);
 }
-QGroupBox {
-border-color: white;
-background-color: rgb(71, 71, 71);
-}
+
 QLabel {
 background: transparent;
+}
+
+QGroupBox {
+	background-color: rgb(71, 71, 71);
+	font-weight: bold;
+}
+
+
+QGroupBox::title {
+
 }</string>
       </property>
       <property name="currentIndex">
        <number>0</number>
       </property>
       <widget class="QWidget" name="tab">
+       <property name="styleSheet">
+        <string notr="true"/>
+       </property>
        <attribute name="title">
         <string>Main</string>
        </attribute>
@@ -61,6 +71,9 @@ background: transparent;
                <width>0</width>
                <height>40</height>
               </size>
+             </property>
+             <property name="styleSheet">
+              <string notr="true"/>
              </property>
              <property name="text">
               <string>Artist</string>
