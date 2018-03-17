@@ -1,8 +1,14 @@
 #!/usr/bin/python3
 """
-PyYama
+    PyYama
+    Copyright (C) 2018 Jaakko Julin
 
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
 
+    See file "LICENSE" for details.
 """
 
 __version__ = '0.1.2'
@@ -81,8 +87,11 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.ui.volumeSpinBox.valueChanged.connect(self.set_volume)
         self.ui.actionAbout_PyYama.triggered.connect(self.about)
         self.ui.powerToolButton.clicked.connect(self.power)
-        self.ui.statusbar.showMessage(str(self.yama.model_name) + " on " + host, 5000)
-
+        self.greetingstage=0
+        self.greetingtimer = QTimer()
+        self.greetingtimer.setSingleShot(True)
+        self.greetingtimer.timeout.connect(self.greeting)
+        self.greetingtimer.start(2000)
 
         self.status = {}
         self.refresh()
@@ -109,15 +118,30 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
     def exit(self):
         QCoreApplication.exit()
 
+    def greeting(self):
+        msg=('PyYama ' + __version__, 'Copyright (C) 2018 Jaakko Julin', 'This is free software.', 'See Help|About for details.', 'ABSOLUTELY NO WARRANTY')
+        self.ui.statusbar.showMessage(msg[self.greetingstage], 2500)
+        self.greetingstage += 1
+        if self.greetingstage < len(msg):
+            self.greetingtimer.start(3000)
+
     def about(self):
         QMessageBox.about(self, "PyYama",
-                          "PyYama " +
-                          __version__ +
-                          "\n\nby "
-                          + __author__ +
-                          "\n\nPyYama is a Python and PyQt5 based software that can control some devices manufactured "
-                          "by a certain Japanese corporation. This program is not supported, endorsed or authorized "
-                          "by that or any other corporation. No warranty.")
+
+                          "Python and PyQt5 based software that can control some multi-room audio devices\n\n"
+                          "PyYama " +__version__ + "\nCopyright (C) 2018 " + __author__ + "\n\n"
+                          "PyYama comes with ABSOLUTELY NO WARRANTY.\n\n"
+                          "This program is free software; you can redistribute it and/or modify "
+                          "it under the terms of the GNU General Public License as published by "
+                          "the Free Software Foundation; either version 2 of the License, or "
+                          "(at your option) any later version. "
+                          "\n\n"
+                          "This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.\n\n"
+
+"You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.\n\n"
+                          "This program is not supported, endorsed or authorized by any manufacturers of said audio equipment.\n\n"
+                          "Some icons are from the Open Iconic collection of icons. Copyright (C) 2014 Waybury, licensed under The MIT License. See file LICENSE in icon directories.\n"
+                          )
 
     def refresh(self):
         self.update_status()
