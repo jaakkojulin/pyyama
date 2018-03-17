@@ -79,6 +79,8 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.ui.volumeSpinBox.valueChanged.connect(self.set_volume)
         self.ui.actionAbout_PyYama.triggered.connect(self.about)
         self.ui.powerToolButton.clicked.connect(self.power)
+        self.ui.statusbar.showMessage(str(self.yama.model_name) + " on " + host, 5000)
+
 
         self.status = {}
         self.refresh()
@@ -156,8 +158,22 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
             power = self.status['power']
         if power:
             self.ui.powerToolButton.setStyleSheet("background-color: rgb(255, 127, 127)")
+            self.ui.previousToolButton.setEnabled(True)
+            self.ui.nextToolButton.setEnabled(True)
+            self.ui.pauseToolButton.setEnabled(True)
+            self.ui.muteToolButton.setEnabled(True)
+            self.ui.zoneComboBox.setEnabled(True)
+            self.ui.inputComboBox.setEnabled(True)
+            self.ui.volumeSpinBox.setEnabled(True)
         else:
             self.ui.powerToolButton.setStyleSheet("background-color: rgb(127, 255, 127)")
+            self.ui.previousToolButton.setEnabled(False)
+            self.ui.nextToolButton.setEnabled(False)
+            self.ui.pauseToolButton.setEnabled(False)
+            self.ui.muteToolButton.setEnabled(False)
+            self.ui.zoneComboBox.setEnabled(False)
+            self.ui.inputComboBox.setEnabled(False)
+            self.ui.volumeSpinBox.setEnabled(False)
 
     def make_zone_list(self):
         self.ui.zoneComboBox.blockSignals(True)
