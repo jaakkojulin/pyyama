@@ -186,7 +186,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         else:
             power = self.status['power']
         if power:
-            self.ui.powerToolButton.setStyleSheet("background-color: rgb(255, 127, 127)")
+            self.ui.powerToolButton.setStyleSheet("background-color: rgb(232, 179, 213)")
             self.ui.previousToolButton.setEnabled(True)
             self.ui.nextToolButton.setEnabled(True)
             self.ui.playPauseToolButton.setEnabled(True)
@@ -195,7 +195,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
             self.ui.inputComboBox.setEnabled(True)
             self.ui.volumeSpinBox.setEnabled(True)
         else:
-            self.ui.powerToolButton.setStyleSheet("background-color: rgb(127, 255, 127)")
+            self.ui.powerToolButton.setStyleSheet("background-color: rgb(122, 213, 179)")
             self.ui.previousToolButton.setEnabled(False)
             self.ui.nextToolButton.setEnabled(False)
             self.ui.playPauseToolButton.setEnabled(False)
@@ -342,6 +342,6 @@ if __name__ == '__main__':
     host = ''
     if len(sys.argv) > 1:
         host = sys.argv[1]
-    w = PyYamaMainWindow(HOST)
+    w = PyYamaMainWindow(host)
     w.show()
     sys.exit(app.exec_())

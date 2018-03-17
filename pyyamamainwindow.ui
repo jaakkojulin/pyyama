@@ -30,7 +30,7 @@ border-color: rgb(127, 127, 127);
      <widget class="QTabWidget" name="tabWidget">
       <property name="styleSheet">
        <string notr="true">QToolButton {
-background-color: rgb(127,159,255);
+background-color: rgb(122,179,213);
 }
 
 QLabel {
@@ -210,7 +210,7 @@ QGroupBox::title {
            <item>
             <widget class="QToolButton" name="powerToolButton">
              <property name="styleSheet">
-              <string notr="true">background-color: rgb(127,255,127)</string>
+              <string notr="true">background-color: rgb(122,213,179)</string>
              </property>
              <property name="text">
               <string>...</string>
