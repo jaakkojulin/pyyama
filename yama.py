@@ -220,7 +220,7 @@ class Yama:
         except requests.exceptions.Timeout as error:
             raise YamaError("Connection timeout.")
         except Exception as error:
-            raise YamaError("Some error in connecting: " + str(error))
+            raise YamaError("Error: " + str(error))
         if r.status_code != 200:
             raise YamaError("HTTP Error")
         response = r.json()

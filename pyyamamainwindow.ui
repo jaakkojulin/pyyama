@@ -28,6 +28,9 @@ border-color: rgb(127, 127, 127);
    <layout class="QGridLayout" name="gridLayout_2">
     <item row="0" column="0">
      <widget class="QTabWidget" name="tabWidget">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="styleSheet">
        <string notr="true">QToolButton {
 background-color: rgb(122,179,213);
@@ -50,7 +53,10 @@ QGroupBox::title {
       <property name="currentIndex">
        <number>0</number>
       </property>
-      <widget class="QWidget" name="tab">
+      <widget class="QWidget" name="maintab">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <property name="styleSheet">
         <string notr="true"/>
        </property>
@@ -372,7 +378,7 @@ QGroupBox::title {
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="tab_2">
+      <widget class="QWidget" name="debugtab">
        <attribute name="title">
         <string>Debug</string>
        </attribute>
@@ -419,11 +425,22 @@ QGroupBox::title {
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionExit">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icons/icons32/account-logout-4x.png</normaloff>:/icons/icons32/account-logout-4x.png</iconset>
+   </property>
    <property name="text">
     <string>E&amp;xit</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
   </action>
   <action name="actionAbout_PyYama">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icons/icons32/star-4x.png</normaloff>:/icons/icons32/star-4x.png</iconset>
+   </property>
    <property name="text">
     <string>&amp;About PyYama...</string>
    </property>

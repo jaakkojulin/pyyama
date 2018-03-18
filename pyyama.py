@@ -11,7 +11,7 @@
     See file "LICENSE" for details.
 """
 
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 __author__ = 'Jaakko Julin'
 
 import sys
@@ -94,8 +94,14 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.greetingtimer.timeout.connect(self.greeting)
         self.greetingtimer.start(2000)
 
+        self.refreshtimer = QTimer()
+        self.refreshtimer.setSingleShot(False)
+        self.refreshtimer.setInterval(60000)
+        self.refreshtimer.timeout.connect(self.refresh)
         self.status = {}
         self.refresh()
+        self.refreshtimer.start()
+
 
         self.make_input_list()
         self.update_nowplaying()
@@ -107,24 +113,16 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.udptimer.timeout.connect(self.listen_UDP)
         self.udptimer.start()
 
-        self.refreshtimer = QTimer()
-        self.refreshtimer.setSingleShot(False)
-        self.refreshtimer.setInterval(60000)
-        self.refreshtimer.timeout.connect(self.refresh)
-        self.refreshtimer.start()
-
-    def connect(self):
-        self.yama = Yama(self.host)
 
     def exit(self):
         QCoreApplication.exit()
 
     def greeting(self):
         msg = ('PyYama ' + __version__, 'Copyright (C) 2018 Jaakko Julin', 'This is free software.', 'See Help|About for details.', 'ABSOLUTELY NO WARRANTY')
-        self.ui.statusbar.showMessage(msg[self.greetingstage], 2500)
+        self.ui.statusbar.showMessage(msg[self.greetingstage], 2000)
         self.greetingstage += 1
         if self.greetingstage < len(msg):
-            self.greetingtimer.start(3000)
+            self.greetingtimer.start(2500)
 
     def about(self):
         QMessageBox.about(self, "PyYama",
@@ -145,11 +143,25 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
                           )
 
     def refresh(self):
-        self.update_status()
+        try:
+            self.update_status() # This can generate YamaErrors (if we have connection issues etc)
+        except YamaError as error:
+            self.ui.statusbar.showMessage(str(error))
+            self.ui.tabWidget.widget(0).setEnabled(False)
+            self.refreshtimer.stop()
+            self.refreshtimer.setSingleShot(True)
+            self.refreshtimer.start(5000) # In case of errors, try again. Note this is delay, not interval.
+            return
         self.update_input(provide=False)
         self.update_volume(provide=False)
         self.update_mute(provide=False)
         self.update_power(provide=False)
+        self.ui.statusbar.showMessage("")
+        if not self.ui.tabWidget.widget(0).isEnabled():
+            self.ui.tabWidget.widget(0).setEnabled(True)
+        self.refreshtimer.setSingleShot(False)
+        self.refreshtimer.setInterval(60000) # Normal refresh every 60 seconds
+
 
     def update_status(self):
         self.status = self.yama.get_status(self.zone)
@@ -228,7 +240,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
     def make_input_list(self):
         self.ui.inputComboBox.blockSignals(True)
         self.ui.inputComboBox.clear()
-        current_input = self.yama.get_current_input(self.zone)
+        current_input = self.simple_error_wrapper(self.yama.get_current_input, self.zone)
         index = 0
         current_index = 0
         for input in self.yama.get_input_list(self.zone):
@@ -243,37 +255,46 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.yama.change_input(self.zone, self.ui.inputComboBox.currentText())
 
     def mute_toggle(self):
-        if self.status['mute'] == False:
-            self.yama.mute(self.zone)
+        if not self.status['mute']:
+            self.simple_error_wrapper(self.yama.mute, self.zone)
         else:
-            self.yama.unmute(self.zone)
+            self.simple_error_wrapper(self.yama.unmute, self.zone)
 
     def pause(self):
-        self.yama.pause()
+        self.simple_error_wrapper(self.yama.pause)
+
+    def simple_error_wrapper(self, meth: staticmethod, *args):
+        try:
+            return meth(*args)
+        except YamaError as error:
+            self.ui.statusbar.showMessage(str(error))
+            self.ui.tabWidget.widget(0).setEnabled(False)
+            self.refresh()
+
     def play(self):
-        self.yama.play()
+        self.simple_error_wrapper(self.yama.play)
 
     def stop(self):
-        self.yama.stop()
+        self.simple_error_wrapper(self.yama.stop)
 
     def previous(self):
-        self.yama.previous()
+        self.simple_error_wrapper(self.yama.previous)
 
     def next(self):
-        self.yama.next()
+        self.simple_error_wrapper(self.yama.next)
 
     def set_volume(self):
-        self.yama.set_volume_dB(self.zone, self.ui.volumeSpinBox.value())
+        self.simple_error_wrapper(self.yama.set_volume_dB, self.zone, self.ui.volumeSpinBox.value())
         self.ui.volumeSpinBox.setEnabled(False)
 
     def power(self):
         if self.status['power']:
-            self.yama.standby(self.zone)
+            self.simple_error_wrapper(self.yama.standby(self.zone))
         else:
-            self.yama.power_on(self.zone)
+            self.simple_error_wrapper(self.yama.power_on(self.zone))
 
     def update_nowplaying(self):
-        response = self.yama.get_nowplaying()
+        response = self.simple_error_wrapper(self.yama.get_nowplaying)
         try:
             if response['playback'] == 'pause':
                 self.ui.nowplayingGroupBox.setTitle('Now playing (paused)')
@@ -317,7 +338,6 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
                 if msg['device_id'] == self.yama.device_id:
                     self.ui.plainTextEdit.appendPlainText(str(address[0]) + ':' + str(address[1])  + "  " + data.decode("utf-8") + '\n')
                 if self.zone in msg:
-
                     if 'signal_info_updated' in msg[self.zone] and msg[self.zone]['signal_info_updated'] == 'true':
                         # TODO
                         pass
