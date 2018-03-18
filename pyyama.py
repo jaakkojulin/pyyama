@@ -95,13 +95,9 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.greetingtimer.start(2000)
 
         self.refreshtimer = QTimer()
-        self.refreshtimer.setSingleShot(False)
-        self.refreshtimer.setInterval(60000)
         self.refreshtimer.timeout.connect(self.refresh)
         self.status = {}
         self.refresh()
-        self.refreshtimer.start()
-
 
         self.make_input_list()
         self.update_nowplaying()
@@ -161,6 +157,8 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
             self.ui.tabWidget.widget(0).setEnabled(True)
         self.refreshtimer.setSingleShot(False)
         self.refreshtimer.setInterval(60000) # Normal refresh every 60 seconds
+        if not self.refreshtimer.isActive():
+            self.refreshtimer.start()
 
 
     def update_status(self):
