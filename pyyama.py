@@ -16,6 +16,7 @@ __author__ = 'Jaakko Julin'
 
 import sys
 import socket
+import signal
 import json
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QCoreApplication, QSettings, QTimer
@@ -357,6 +358,9 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
             self.udptimer.start(0)
 
 
+def _keyboardinterrupt_handler(signum, frame):
+    QCoreApplication.exit()
+
 if __name__ == '__main__':
     QCoreApplication.setOrganizationDomain(ORGANIZATION_DOMAIN)
     QCoreApplication.setApplicationName(APPLICATION_NAME)
@@ -365,5 +369,6 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         host = sys.argv[1]
     w = PyYamaMainWindow(host)
+    signal.signal(signal.SIGINT, _keyboardinterrupt_handler)
     w.show()
     sys.exit(app.exec_())
