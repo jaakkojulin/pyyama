@@ -58,6 +58,7 @@ class Yama:
         self._volume_max = {}
         self._volume_min = {}
         self._volume_step = {}
+
         try:
             #self.input_list = [input['id'] for input in response['system']['input_list']]
             self.zones = response['distribution']['server_zone_list']
@@ -70,6 +71,7 @@ class Yama:
                         self._volume_step[zone['id']] = int(rangesettings['step'])
         except KeyError as error:
             raise YamaConnectionError("Response from device doesn't contain the information I need: " + str(error))
+
     @property
     def device_id(self):
         return self._device_id

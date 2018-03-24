@@ -22,6 +22,11 @@
 background-color: rgb(63, 63, 63);
 color: white;
 border-color: rgb(127, 127, 127);
+}
+
+QWidget:disabled {
+
+color: rgb(127, 127, 127)
 }</string>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -95,7 +100,7 @@ QGroupBox::title {
               </size>
              </property>
              <property name="text">
-              <string>TextLabel</string>
+              <string/>
              </property>
              <property name="wordWrap">
               <bool>true</bool>
@@ -137,7 +142,7 @@ QGroupBox::title {
               </size>
              </property>
              <property name="text">
-              <string>TextLabel</string>
+              <string/>
              </property>
             </widget>
            </item>
@@ -150,7 +155,7 @@ QGroupBox::title {
               </size>
              </property>
              <property name="text">
-              <string>TextLabel</string>
+              <string/>
              </property>
              <property name="wordWrap">
               <bool>true</bool>
@@ -412,6 +417,9 @@ QGroupBox::title {
     <property name="title">
      <string>&amp;File</string>
     </property>
+    <addaction name="actionConnect"/>
+    <addaction name="action_Disconnect"/>
+    <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
@@ -435,6 +443,12 @@ QGroupBox::title {
    <property name="shortcut">
     <string>Ctrl+Q</string>
    </property>
+   <property name="shortcutContext">
+    <enum>Qt::WindowShortcut</enum>
+   </property>
+   <property name="shortcutVisibleInContextMenu">
+    <bool>true</bool>
+   </property>
   </action>
   <action name="actionAbout_PyYama">
    <property name="icon">
@@ -443,6 +457,22 @@ QGroupBox::title {
    </property>
    <property name="text">
     <string>&amp;About PyYama...</string>
+   </property>
+  </action>
+  <action name="actionConnect">
+   <property name="text">
+    <string>Co&amp;nnect</string>
+   </property>
+   <property name="shortcutVisibleInContextMenu">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="action_Disconnect">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Disconnect</string>
    </property>
   </action>
  </widget>

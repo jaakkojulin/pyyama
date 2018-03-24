@@ -38,39 +38,15 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.ui = Ui_PyYamaMainWindow()
         self.ui.setupUi(self)
         #self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
-        settings = QSettings()
+        self.settings = QSettings()
+        self.connected = False
         if host == '':
-            host = settings.value('hostname', type=str)
-            autoconnect = settings.value('autoconnect', False, type=bool)
+            self.host = self.settings.value('hostname', type=str)
+            self.autoconnect = self.settings.value('autoconnect', False, type=bool)
         else:
-            autoconnect = True
-        udp_port = settings.value('udp_port', 0, type=int)
-        try:
-            self.listener_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.listener_sock.bind(('', udp_port))
-            self.listener_sock.setblocking(0)
-        except OSError as error:
-            QMessageBox.critical(self, "PyYama error",
-                                 "Error in setting up UDP listener: " + str(error))
-            exit(1)
-        for attempt in range(10):
-            try:
-                if not autoconnect or host == '':
-                    host=self.ask_for_hostname(host)
-                    if host == '':
-                        exit(1);
-                self.yama = Yama(host)
-            except YamaError as error:
-                QMessageBox.critical(self, "PyYama error", str(error))
-                autoconnect = False
-            else:
-                break
-        else:
-            exit(1)
-        settings.setValue('hostname', host)
-        self.make_zone_list()
-        self.zone = self.ui.zoneComboBox.currentText()
-        self.yama.set_listener_port(self.listener_sock.getsockname()[1])
+            self.host = host
+            self.autoconnect = True
+        self.udp_port = self.settings.value('udp_port', 0, type=int)
 
         self.ui.actionExit.triggered.connect(self.exit)
         self.ui.playPauseToolButton.clicked.connect(self.pause)
@@ -78,12 +54,15 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.ui.nextToolButton.clicked.connect(self.next)
         self.ui.previousToolButton.clicked.connect(self.previous)
         self.ui.muteToolButton.clicked.connect(self.mute_toggle)
-        self.ui.modelNameLabel.setText(self.yama.model_name)
         self.ui.zoneComboBox.currentIndexChanged.connect(self.change_zone)
         self.ui.inputComboBox.currentIndexChanged.connect(self.change_input)
         self.ui.volumeSpinBox.valueChanged.connect(self.set_volume)
         self.ui.actionAbout_PyYama.triggered.connect(self.about)
+        self.ui.actionConnect.triggered.connect(self.connect)
+        self.ui.action_Disconnect.triggered.connect(self.connection_disconnect)
         self.ui.powerToolButton.clicked.connect(self.power)
+
+
         self.greetingstage = 0
         self.greetingtimer = QTimer()
         self.greetingtimer.setSingleShot(True)
@@ -93,7 +72,52 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.refreshtimer = QTimer()
         self.refreshtimer.timeout.connect(self.refresh)
         self.status = {}
-        self.refresh()
+
+        self.disable_buttons()
+        if self.autoconnect:
+            self.connect(autoconnect=True)
+
+    def connect(self, autoconnect=False):
+        host=self.host
+        try:
+            self.listener_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.listener_sock.bind(('', self.udp_port))
+            self.listener_sock.setblocking(0)
+        except OSError as error:
+            QMessageBox.critical(self, "PyYama error", "Error in setting up UDP listener: " + str(error))
+            return
+        for attempt in range(10):
+            try:
+                if not autoconnect or self.host == '':
+                    host=self.ask_for_hostname(self.host)
+                    if host == '':
+                        return
+                self.yama = Yama(host)
+            except YamaError as error:
+                QMessageBox.critical(self, "PyYama error", str(error))
+                autoconnect = False
+            else:
+                break
+        else:
+            return
+
+        self.connected = True
+        self.ui.actionConnect.setEnabled(False)
+        self.ui.action_Disconnect.setEnabled(True)
+        self.host=host
+        self.settings.setValue('hostname', self.host)  # TODO: set this in some preferences
+        self.make_zone_list()
+        self.zone = self.ui.zoneComboBox.currentText()
+        self.yama.set_listener_port(self.listener_sock.getsockname()[1])
+
+        try:
+            self.update_status()
+        except YamaError:
+            print("Got an error right after connecting, something is weird.")
+            self.disconnect()
+
+        self.make_input_list()
+        self.refresh(update_status=False)
 
         self.make_input_list()
         self.update_nowplaying()
@@ -105,6 +129,13 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.udptimer.timeout.connect(self.listen_UDP)
         self.udptimer.start()
 
+        self.ui.modelNameLabel.setText(self.yama.model_name)
+
+    def connection_disconnect(self):
+        self.connected = False
+        self.ui.actionConnect.setEnabled(True)
+        self.ui.action_Disconnect.setEnabled(False)
+        self.disable_buttons()
 
     def exit(self):
         QCoreApplication.exit()
@@ -141,13 +172,19 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
                           "Some icons are from the Open Iconic collection of icons. Copyright (C) 2014 Waybury, licensed under The MIT License. See file LICENSE in icon directories.\n"
                           )
 
-    def refresh(self):
-        print("Refresh called!")
+    def disable_buttons(self):
+        self.ui.tabWidget.widget(0).setEnabled(False)
+
+    def refresh(self, update_status=True):
+        if not self.connected:
+            if self.refreshtimer.isActive():
+                self.refreshtimer.stop()
+            return
         try:
             self.update_status() # This can generate YamaErrors (if we have connection issues etc)
         except YamaError as error:
             self.ui.statusbar.showMessage(str(error))
-            self.ui.tabWidget.widget(0).setEnabled(False)
+            self.disable_buttons()
             self.refreshtimer.stop()
             self.refreshtimer.setSingleShot(True)
             self.refreshtimer.start(5000) # In case of errors, try again. Note this is delay, not interval.
@@ -232,7 +269,6 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.ui.zoneComboBox.clear()
         for zone in self.yama.zones:
             self.ui.zoneComboBox.addItem(zone)
-        self.ui.inputComboBox.setCurrentIndex(0)
         self.ui.zoneComboBox.blockSignals(False)
 
     def change_zone(self):
@@ -271,7 +307,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
             return meth(*args)
         except YamaError as error:
             self.ui.statusbar.showMessage(str(error))
-            self.ui.tabWidget.widget(0).setEnabled(False)
+            self.disable_buttons()
             self.refresh()
 
     def play(self):
@@ -327,6 +363,8 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
             pass
 
     def listen_UDP(self):
+        if not self.connected:
+            return
         try:
             data, address = self.listener_sock.recvfrom(10000)
         except BlockingIOError:
