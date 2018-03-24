@@ -433,10 +433,6 @@ QGroupBox::title {
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionExit">
-   <property name="icon">
-    <iconset resource="icons.qrc">
-     <normaloff>:/icons/icons32/account-logout-4x.png</normaloff>:/icons/icons32/account-logout-4x.png</iconset>
-   </property>
    <property name="text">
     <string>E&amp;xit</string>
    </property>
@@ -460,6 +456,10 @@ QGroupBox::title {
    </property>
   </action>
   <action name="actionConnect">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icons/icons32/account-login-4x.png</normaloff>:/icons/icons32/account-login-4x.png</iconset>
+   </property>
    <property name="text">
     <string>Co&amp;nnect</string>
    </property>
@@ -470,6 +470,10 @@ QGroupBox::title {
   <action name="action_Disconnect">
    <property name="enabled">
     <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icons/icons32/account-logout-4x.png</normaloff>:/icons/icons32/account-logout-4x.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Disconnect</string>

@@ -58,6 +58,7 @@ class Yama:
         self._volume_max = {}
         self._volume_min = {}
         self._volume_step = {}
+        self._statuses = {}
 
         try:
             #self.input_list = [input['id'] for input in response['system']['input_list']]
@@ -71,6 +72,9 @@ class Yama:
                         self._volume_step[zone['id']] = int(rangesettings['step'])
         except KeyError as error:
             raise YamaConnectionError("Response from device doesn't contain the information I need: " + str(error))
+
+        for zone in self.zones:
+            self.update_status(zone)
 
     @property
     def device_id(self):
@@ -87,24 +91,6 @@ class Yama:
     def model_name(self, name):
             assert isinstance(name, str)
             self._model_name=name
-
-    def get_current_input(self, zone: str) -> str:
-        """Get the name of the current input
-
-        Args:
-            zone: name of the zone
-
-        Returns:
-            str: name of the current input of zone
-
-        """
-        input=""
-        response=self.make_request(zone, 'getStatus')
-        try:
-            input=response['input']
-        except KeyError:
-            raise YamaConnectionError("Response from device doesn't contain the information I need")
-        return input
 
     def get_input_list(self, zone):
         return self._input_list[zone]
@@ -151,24 +137,40 @@ class Yama:
     def standby(self, zone):
         self.make_request(zone, 'setPower', {'power': 'standby'})
 
+    def update_volume(self, zone: str, volume: int):
+        """ Volume has changed """
+        self._statuses[zone]['volume'] = volume
+
+    def update_input(self, zone: str, input: str):
+        self._statuses[zone]['input'] = input
+
+    def update_mute(self, zone: str, mute: bool):
+        self._statuses[zone]['mute'] = mute
+
+    def get_mute(self, zone: str) -> bool:
+        return self._statuses[zone]['mute']
+
+    def update_power(self, zone: str, power: bool):
+        self._statuses[zone]['power'] = power
+
+    def get_power(self, zone: str) -> bool:
+        return self._statuses[zone]['power']
+
+    def set_volume(self, zone: str, volume: int):
+        if volume >= 0 and volume < self.get_volume_max(zone):
+            self.make_request(zone, 'setVolume', {'volume': str(volume)})
+
     def set_volume_dB(self, zone: str, volumedB):
         volume=self.get_volume_max(zone)+int(volumedB/0.5)
         if volume < 0:
             volume = 0
-        #print("About to set the volume to " + str(volume))
-        self.make_request(zone, 'setVolume', {'volume': str(volume)})
+        self.set_volume(zone, volume)
 
     def get_volume(self, zone: str):
-        response=self.make_request(zone, 'getStatus')
-        volume=int(response['volume'])
-        if volume > self.get_volume_max(zone):
-            raise YamaError("Volume above known maximum. Impossible.")
-        else:
-            return volume
+        return self._statuses[zone]['volume']
 
     def get_volume_dB(self, zone: str): # Don't use this function, use get_status instead
-        response=self.make_request(zone, 'getStatus')
-        volume=int(response['volume'])
+        volume=self.get_volume(zone)
         maxvolume=self.get_volume_max(zone)
         print("Volume as reported by device is " + str(volume) + " and in dB this probably is " + str((volume-maxvolume)*0.5))
         return (volume-maxvolume) * 0.5
@@ -182,14 +184,21 @@ class Yama:
     def get_volume_step(self, zone):
         return self._volume_step[zone]
 
-    def get_status(self, zone):  # TODO: store this status stuff somewhere and replace methods like get_volume() by returning members of that data structure
-        response=self.make_request(zone, 'getStatus')
-        out = {'mute': bool(response['mute']),
+    def get_input(self, zone: str):
+        return self._statuses[zone]['input']
+
+    def update_status(self, zone):
+        response = self.make_request(zone, 'getStatus')
+        self._statuses[zone] = {'mute': bool(response['mute']),
                'volume': int(response['volume']),
                'power': (response['power'] == 'on'),
                'input': response['input']
         }
-        return out
+
+    def get_status(self, zone, update=False):  # TODO: store this status stuff somewhere and replace methods like get_volume() by returning members of that data structure
+        if update:
+            self.update_status(zone)
+        return self._statuses[zone]
 
     def get_nowplaying(self):
         input='netusb'

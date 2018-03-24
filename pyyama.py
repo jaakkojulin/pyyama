@@ -71,7 +71,6 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
 
         self.refreshtimer = QTimer()
         self.refreshtimer.timeout.connect(self.refresh)
-        self.status = {}
 
         self.disable_buttons()
         if self.autoconnect:
@@ -180,19 +179,20 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
             if self.refreshtimer.isActive():
                 self.refreshtimer.stop()
             return
-        try:
-            self.update_status() # This can generate YamaErrors (if we have connection issues etc)
-        except YamaError as error:
-            self.ui.statusbar.showMessage(str(error))
-            self.disable_buttons()
-            self.refreshtimer.stop()
-            self.refreshtimer.setSingleShot(True)
-            self.refreshtimer.start(5000) # In case of errors, try again. Note this is delay, not interval.
-            return
-        self.update_input(provide=False)
-        self.update_volume(provide=False)
-        self.update_mute(provide=False)
-        self.update_power(provide=False)
+        if update_status:
+            try:
+                self.update_status() # This can generate YamaErrors (if we have connection issues etc)
+            except YamaError as error:
+                self.ui.statusbar.showMessage(str(error))
+                self.disable_buttons()
+                self.refreshtimer.stop()
+                self.refreshtimer.setSingleShot(True)
+                self.refreshtimer.start(5000) # In case of errors, try again. Note this is delay, not interval.
+                return
+        self.update_input()
+        self.update_volume()
+        self.update_mute()
+        self.update_power()
         self.ui.statusbar.showMessage("")
         if not self.ui.tabWidget.widget(0).isEnabled():
             self.ui.tabWidget.widget(0).setEnabled(True)
@@ -204,13 +204,10 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
 
     def update_status(self):
         print("Update status called!")
-        self.status = self.yama.get_status(self.zone)
+        self.yama.update_status(self.zone)
 
-    def update_volume(self, provide=False, volume=0):  # If you provide a volume, set provide to True.
-        if provide:
-            self.status['volume'] = volume
-        else:
-            volume = self.status['volume']
+    def update_volume(self):
+        volume = self.yama.get_volume(self.zone)
         maxvolume = self.yama.get_volume_max(self.zone)
         volume_dB = (volume - maxvolume) * 0.5
         # print("Volume as reported by device is " + str(volume) + " and in dB this probably is " + str(volume_dB))
@@ -220,23 +217,17 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
             self.ui.volumeSpinBox.blockSignals(False)
         self.ui.volumeSpinBox.setEnabled(True)
 
-    def update_mute(self, provide=False, muted=False):
+    def update_mute(self):
         self.ui.muteToolButton.blockSignals(True)
-        if provide:
-            self.status['mute'] = muted
-        else:
-            muted = self.status['mute']
+        muted = self.yama.get_mute(self.zone)
         if muted:
             self.ui.muteToolButton.setIcon(QtGui.QIcon(":/icons/icons32/volume-high-4x.png"))
         else:
             self.ui.muteToolButton.setIcon(QtGui.QIcon(":/icons/icons32/volume-off-4x.png"))
         self.ui.muteToolButton.blockSignals(False)
 
-    def update_power(self, provide=False, power=False):
-        if provide:
-            self.status['power'] = power
-        else:
-            power = self.status['power']
+    def update_power(self):
+        power = self.yama.get_power(self.zone)
         if power:
             self.ui.powerToolButton.setStyleSheet("background-color: rgb(232, 179, 213)")
             self.ui.previousToolButton.setEnabled(True)
@@ -256,11 +247,8 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
             self.ui.inputComboBox.setEnabled(False)
             self.ui.volumeSpinBox.setEnabled(False)
 
-    def update_input(self, provide=False, input_source=''):
-        if provide:
-            self.status['input'] = input_source
-        else:
-            input_source = self.status['input']
+    def update_input(self):
+        input_source = self.yama.get_input(self.zone)
         if input_source != self.ui.inputComboBox.currentText():
             self.make_input_list()
 
@@ -279,7 +267,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
     def make_input_list(self):  # Call update_status() first
         self.ui.inputComboBox.blockSignals(True)
         self.ui.inputComboBox.clear()
-        current_input = self.status['input']
+        current_input = self.yama.get_input(self.zone)
         index = 0
         current_index = 0
         for input in self.yama.get_input_list(self.zone):
@@ -294,7 +282,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.yama.change_input(self.zone, self.ui.inputComboBox.currentText())
 
     def mute_toggle(self):
-        if not self.status['mute']:
+        if not self.yama.get_mute(self.zone):
             self.simple_error_wrapper(self.yama.mute, self.zone)
         else:
             self.simple_error_wrapper(self.yama.unmute, self.zone)
@@ -327,7 +315,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.ui.volumeSpinBox.setEnabled(False)
 
     def power(self):
-        if self.status['power']:
+        if self.yama.get_power(self.zone):
             self.simple_error_wrapper(self.yama.standby, self.zone)
         else:
             self.simple_error_wrapper(self.yama.power_on, self.zone)
@@ -379,17 +367,23 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
                 if msg['device_id'] == self.yama.device_id:
                     self.ui.plainTextEdit.appendPlainText(str(address[0]) + ':' + str(address[1])  + "  " + data.decode("utf-8") + '\n')
                 if self.zone in msg:
-                    if 'signal_info_updated' in msg[self.zone] and msg[self.zone]['signal_info_updated'] == 'true':
+                    zone=self.zone
+                    zonemsg=msg[zone]
+                    if 'signal_info_updated' in zonemsg and zonemsg['signal_info_updated'] == 'true':
                         # TODO
                         pass
                     if 'power' in msg[self.zone]:
-                        self.update_power(provide=True, power=(msg[self.zone]['power'] == 'on'))
+                        self.yama.update_power(zone, (zonemsg['power']=='on'))
+                        self.update_power()
                     if 'volume' in msg[self.zone]:
-                        self.update_volume(provide=True, volume=int(msg[self.zone]['volume']))
+                        self.yama.update_volume(zone, int(zonemsg['volume']))
+                        self.update_volume()
                     if 'mute' in msg[self.zone]:
-                        self.update_mute(provide=True, muted=bool(msg[self.zone]['mute']))
+                        self.yama.update_mute(zone, bool(zonemsg['mute']))
+                        self.update_mute()
                     if 'input' in msg[self.zone]:
-                        self.update_input(provide=True, input_source=msg[self.zone]['input'])
+                        self.yama.update_input(zone, zonemsg['input'])
+                        self.update_input()
                 if 'netusb' in msg and 'play_info_updated' in msg['netusb']:  # TODO: only for netusb?
                     self.update_nowplaying()
             self.udpinterval = 1
