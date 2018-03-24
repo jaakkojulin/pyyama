@@ -164,7 +164,7 @@ class Yama:
         else:
             return volume
 
-    def get_volume_dB(self, zone: str):
+    def get_volume_dB(self, zone: str): # Don't use this function, use get_status instead
         response=self.make_request(zone, 'getStatus')
         volume=int(response['volume'])
         maxvolume=self.get_volume_max(zone)
@@ -180,7 +180,7 @@ class Yama:
     def get_volume_step(self, zone):
         return self._volume_step[zone]
 
-    def get_status(self, zone):
+    def get_status(self, zone):  # TODO: store this status stuff somewhere and replace methods like get_volume() by returning members of that data structure
         response=self.make_request(zone, 'getStatus')
         out = {'mute': bool(response['mute']),
                'volume': int(response['volume']),

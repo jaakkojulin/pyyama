@@ -54,15 +54,10 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
             exit(1)
         for attempt in range(10):
             try:
-                if autoconnect and host != '':
-                    self.yama = Yama(host)
-                else:
-                    text, ok_pressed = QInputDialog.getText(self, "PyYama Connect", "Hostname of device:",
-                                                            QLineEdit.Normal, host)
-                    if ok_pressed:
-                        host = text
-                    else:
-                        exit(1)
+                if not autoconnect or host == '':
+                    host=self.ask_for_hostname(host)
+                    if host == '':
+                        exit(1);
                 self.yama = Yama(host)
             except YamaError as error:
                 QMessageBox.critical(self, "PyYama error", str(error))
@@ -113,6 +108,13 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
     def exit(self):
         QCoreApplication.exit()
 
+    def ask_for_hostname(self, host='') -> str:
+        host, ok_pressed = QInputDialog.getText(self, "PyYama Connect", "Hostname of device:", QLineEdit.Normal, host)
+        if ok_pressed:
+            return host
+        else:
+            return ''
+
     def greeting(self):
         msg = ('PyYama ' + __version__, 'Copyright (C) 2018 Jaakko Julin', 'This is free software.', 'See Help|About for details.', 'ABSOLUTELY NO WARRANTY')
         self.ui.statusbar.showMessage(msg[self.greetingstage], 2000)
@@ -139,6 +141,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
                           )
 
     def refresh(self):
+        print("Refresh called!")
         try:
             self.update_status() # This can generate YamaErrors (if we have connection issues etc)
         except YamaError as error:
@@ -162,6 +165,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
 
 
     def update_status(self):
+        print("Update status called!")
         self.status = self.yama.get_status(self.zone)
 
     def update_volume(self, provide=False, volume=0):  # If you provide a volume, set provide to True.
@@ -235,10 +239,10 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.make_input_list()
         self.refresh()
 
-    def make_input_list(self):
+    def make_input_list(self):  # Call update_status() first
         self.ui.inputComboBox.blockSignals(True)
         self.ui.inputComboBox.clear()
-        current_input = self.simple_error_wrapper(self.yama.get_current_input, self.zone)
+        current_input = self.status['input']
         index = 0
         current_index = 0
         for input in self.yama.get_input_list(self.zone):
@@ -287,9 +291,9 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
 
     def power(self):
         if self.status['power']:
-            self.simple_error_wrapper(self.yama.standby(self.zone))
+            self.simple_error_wrapper(self.yama.standby, self.zone)
         else:
-            self.simple_error_wrapper(self.yama.power_on(self.zone))
+            self.simple_error_wrapper(self.yama.power_on, self.zone)
 
     def update_nowplaying(self):
         response = self.simple_error_wrapper(self.yama.get_nowplaying)
