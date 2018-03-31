@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>670</width>
+    <width>522</width>
     <height>372</height>
    </rect>
   </property>
@@ -50,7 +50,7 @@ color: rgb(127, 127, 127)
       <enum>QAbstractItemView::SelectRows</enum>
      </property>
      <attribute name="horizontalHeaderDefaultSectionSize">
-      <number>200</number>
+      <number>150</number>
      </attribute>
      <attribute name="horizontalHeaderStretchLastSection">
       <bool>true</bool>

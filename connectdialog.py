@@ -14,7 +14,6 @@ class YamaFinder(QtCore.QThread):
     def __del__(self):
         print("Thread received del")
         self.exiting = True
-        self.wait()
 
     def run(self):
         for yama in find_yamas():
@@ -84,7 +83,6 @@ class  ConnectDialog(QtWidgets.QDialog):
 
     @pyqtSlot()
     def refresh_finished(self):
-        print("Finished, back in UI")
         self.update_mainlabel(finished=True)
 
     def update_mainlabel(self, finished=False):
