@@ -217,7 +217,6 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
 
 
     def update_status(self):
-        print("Update status called!")
         self.yama.update_status(self.zone)
 
     def update_volume(self):
