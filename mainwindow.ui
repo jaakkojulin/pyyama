@@ -479,6 +479,11 @@ QGroupBox::title {
     <string>&amp;Disconnect</string>
    </property>
   </action>
+  <action name="actionTest">
+   <property name="text">
+    <string>Test</string>
+   </property>
+  </action>
  </widget>
  <resources>
   <include location="icons.qrc"/>

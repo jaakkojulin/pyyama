@@ -11,7 +11,7 @@
     See file "LICENSE" for details.
 """
 
-__version__ = '0.1.5'
+__version__ = '0.1.6'
 __author__ = 'Jaakko Julin'
 
 import sys
@@ -21,7 +21,8 @@ import json
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QCoreApplication, QSettings, QTimer
 from PyQt5.QtWidgets import QInputDialog, QLineEdit, QMessageBox
-from pyyamamainwindow import Ui_PyYamaMainWindow
+from ui_mainwindow import Ui_PyYamaMainWindow
+from connectdialog import ConnectDialog
 from yama import Yama, YamaError
 
 ORGANIZATION_DOMAIN = 'kuuks.iki.fi'
@@ -49,6 +50,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.udp_port = self.settings.value('udp_port', 0, type=int)
 
         self.ui.actionExit.triggered.connect(self.exit)
+        self.ui.actionTest.triggered.connect(self.open_connect_dialog)
         self.ui.playPauseToolButton.clicked.connect(self.pause)
         self.ui.stopToolButton.clicked.connect(self.stop)
         self.ui.nextToolButton.clicked.connect(self.next)
@@ -75,6 +77,8 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.disable_buttons()
         if self.autoconnect:
             self.connect(autoconnect=True)
+        else:
+            self.connect()
 
     def connect(self, autoconnect=False):
         host=self.host
@@ -88,7 +92,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         for attempt in range(10):
             try:
                 if not autoconnect or self.host == '':
-                    host=self.ask_for_hostname(self.host)
+                    host=self.open_connect_dialog(host=self.host)
                     if host == '':
                         return
                 self.yama = Yama(host)
@@ -139,10 +143,12 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
     def exit(self):
         QCoreApplication.exit()
 
-    def ask_for_hostname(self, host='') -> str:
-        host, ok_pressed = QInputDialog.getText(self, "PyYama Connect", "Hostname of device:", QLineEdit.Normal, host)
-        if ok_pressed:
-            return host
+
+    def open_connect_dialog(self, host=''):
+        dialog = ConnectDialog(host)
+        foo=dialog.exec_()
+        if foo == ConnectDialog.Accepted:
+            return dialog.hostname
         else:
             return ''
 

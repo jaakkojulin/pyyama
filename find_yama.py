@@ -8,7 +8,9 @@ from yama import YamaError
 
 
 class YamaFinderError(YamaError):
-    """Our errors. These are business as usual, failures should be tolerated. We may try to connect to unsupported devices etc."""
+    """Our errors. These are business as usual, failures should be tolerated. We may try to connect to
+    unsupported devices etc.
+    """
     pass
 
 def find_hostname(url):
@@ -16,7 +18,7 @@ def find_hostname(url):
     return o.netloc.split(':', 1)[0]
 
 
-def find_location_headers_of_media_renderers_with_ssdp(timeout=3):
+def find_location_headers_of_media_renderers_with_ssdp(timeout=5):
     ssdp_request = \
     'M-SEARCH * HTTP/1.1\r\n' \
     'HOST: 239.255.255.250:1900\r\n' \
@@ -28,8 +30,6 @@ def find_location_headers_of_media_renderers_with_ssdp(timeout=3):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     s.settimeout(timeout)
     s.sendto(ssdp_request.encode(), ('239.255.255.250', 1900) )
-    
-    locations = []
     
     try:
         while True:
@@ -47,13 +47,11 @@ def find_location_headers_of_media_renderers_with_ssdp(timeout=3):
                 try:
                     key, value = line.split(': ', 1)
                     if key == 'Location' and value[0:4] == 'http':
-                        locations.append(value)
+                        yield value
                 except ValueError:
                     continue
     except socket.timeout:
         pass
-    finally:
-        return locations
 
 def verify_yama(loc):
     yama = {}
@@ -81,6 +79,10 @@ def verify_yama(loc):
     model = device.find('modelName', root.nsmap)
     if model is not None:
         yama['model'] = model.text
+    #Load friendly name, if found.
+    name = device.find('friendlyName', root.nsmap)
+    if name is not None:
+        yama['name'] = name.text
 
     xdevice = root.find('yamaha:X_device', root.nsmap) 
     # Check Yamaha tag <yamaha:X_device> exists
@@ -109,17 +111,14 @@ def verify_yama(loc):
     return
 
 def find_yamas():
-    locs=find_location_headers_of_media_renderers_with_ssdp()
-    yamas = []
-    for loc in locs:
+    for loc in find_location_headers_of_media_renderers_with_ssdp():
         try:
             yama=verify_yama(loc)
             if yama:
-                yamas.append(yama)
+                yield yama
         except YamaFinderError as error:
             print(error)
-    return yamas
 
 if __name__ == "__main__":
-    yamas=find_yamas()
-    print(yamas)
+    for yama in find_yamas():
+        print(yama)
