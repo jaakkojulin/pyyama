@@ -431,7 +431,14 @@ QGroupBox::title {
     </property>
     <addaction name="actionAbout_PyYama"/>
    </widget>
+   <widget class="QMenu" name="menuSettings">
+    <property name="title">
+     <string>&amp;Settings</string>
+    </property>
+    <addaction name="actionPreferences"/>
+   </widget>
    <addaction name="menu_File"/>
+   <addaction name="menuSettings"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -464,7 +471,7 @@ QGroupBox::title {
      <normaloff>:/icons/icons32/account-login-4x.png</normaloff>:/icons/icons32/account-login-4x.png</iconset>
    </property>
    <property name="text">
-    <string>Co&amp;nnect</string>
+    <string>Co&amp;nnect...</string>
    </property>
    <property name="shortcutVisibleInContextMenu">
     <bool>true</bool>
@@ -482,9 +489,13 @@ QGroupBox::title {
     <string>&amp;Disconnect</string>
    </property>
   </action>
-  <action name="actionTest">
+  <action name="actionPreferences">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/icons/icons32/cog-4x.png</normaloff>:/icons/icons32/cog-4x.png</iconset>
+   </property>
    <property name="text">
-    <string>Test</string>
+    <string>Preferences...</string>
    </property>
   </action>
  </widget>

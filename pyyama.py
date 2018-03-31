@@ -23,6 +23,7 @@ from PyQt5.QtCore import Qt, QCoreApplication, QSettings, QTimer
 from PyQt5.QtWidgets import QInputDialog, QLineEdit, QMessageBox
 from ui_mainwindow import Ui_PyYamaMainWindow
 from connectdialog import ConnectDialog
+from preferencesdialog import PreferencesDialog
 from yama import Yama, YamaError
 
 ORGANIZATION_DOMAIN = 'kuuks.iki.fi'
@@ -42,15 +43,18 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.settings = QSettings()
         self.connected = False
         if host == '':
-            self.host = self.settings.value('hostname', type=str)
             self.autoconnect = self.settings.value('autoconnect', False, type=bool)
+            if self.autoconnect:
+                self.host = self.settings.value('autoconnect_host', '', type=str)
+            else:
+                self.host = self.settings.value('last_good_host', '', type=str)
         else:
             self.host = host
             self.autoconnect = True
         self.udp_port = self.settings.value('udp_port', 0, type=int)
 
         self.ui.actionExit.triggered.connect(self.exit)
-        self.ui.actionTest.triggered.connect(self.open_connect_dialog)
+        self.ui.actionPreferences.triggered.connect(self.open_preferences_dialog)
         self.ui.playPauseToolButton.clicked.connect(self.pause)
         self.ui.stopToolButton.clicked.connect(self.stop)
         self.ui.nextToolButton.clicked.connect(self.next)
@@ -108,7 +112,7 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.ui.actionConnect.setEnabled(False)
         self.ui.action_Disconnect.setEnabled(True)
         self.host=host
-        self.settings.setValue('hostname', self.host)  # TODO: set this in some preferences
+        self.settings.setValue('last_good_host', self.host)
         self.make_zone_list()
         self.zone = self.ui.zoneComboBox.currentText()
         self.yama.set_listener_port(self.listener_sock.getsockname()[1])
@@ -146,11 +150,15 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
 
     def open_connect_dialog(self, host=''):
         dialog = ConnectDialog(host)
-        foo=dialog.exec_()
-        if foo == ConnectDialog.Accepted:
+        if dialog.exec_() == ConnectDialog.Accepted:
             return dialog.hostname
         else:
             return ''
+
+    def open_preferences_dialog(self):
+        dialog = PreferencesDialog()
+        dialog.exec_()
+
 
     def greeting(self):
         msg = ('PyYama ' + __version__, 'Copyright (C) 2018 Jaakko Julin', 'This is free software.', 'See Help|About for details.', 'ABSOLUTELY NO WARRANTY')
@@ -261,8 +269,17 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
     def make_zone_list(self):
         self.ui.zoneComboBox.blockSignals(True)
         self.ui.zoneComboBox.clear()
+        defaultzone=self.settings.value("default_zone", 'main', type=str)
         for zone in self.yama.zones:
             self.ui.zoneComboBox.addItem(zone)
+        if defaultzone != '':
+            try:
+                self.ui.zoneComboBox.setCurrentIndex(self.yama.zones.index(defaultzone))
+            except ValueError:
+                print("No such zone: " + defaultzone)
+                self.ui.zoneComboBox.setCurrentIndex(0)
+        else:
+            self.ui.zoneComboBox.setCurrentIndex(0)
         self.ui.zoneComboBox.blockSignals(False)
 
     def change_zone(self):
@@ -274,14 +291,13 @@ class PyYamaMainWindow(QtWidgets.QMainWindow):
         self.ui.inputComboBox.blockSignals(True)
         self.ui.inputComboBox.clear()
         current_input = self.yama.get_input(self.zone)
-        index = 0
-        current_index = 0
-        for input in self.yama.get_input_list(self.zone):
+        inputs = self.yama.get_input_list(self.zone)
+        for input in inputs:
             self.ui.inputComboBox.addItem(input)
-            if input == current_input:
-                current_index = index
-            index += 1
-        self.ui.inputComboBox.setCurrentIndex(current_index)
+        try:
+            self.ui.inputComboBox.setCurrentIndex(inputs.index(current_input))
+        except ValueError:
+            self.ui.inputComboBox.setCurrentIndex(0)
         self.ui.inputComboBox.blockSignals(False)
 
     def change_input(self):
